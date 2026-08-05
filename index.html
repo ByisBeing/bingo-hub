@@ -84,8 +84,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-
 .navbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid rgba(0,0,0,0.06);display:flex;justify-content:space-around;align-items:center;padding:6px 0 env(safe-area-inset-bottom,6px);z-index:100}
 .nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 10px;border:none;background:none;color:var(--text2);font-size:10px;cursor:pointer;transition:.2s;min-width:56px;min-height:44px;justify-content:center}
 .nav-item .icon{font-size:22px;transition:.2s}
-.nav-item.active{color:var(--pink2)}.nav-item.active .icon{transform:scale(1.12)}
-.card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:12px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.6)}
+.nav-item.active{color:var(--pink2)}.nav-item.active .icon{transform:scale(1.12)}.nav-item.active::before{content:'';position:absolute;top:2px;width:20px;height:3px;background:var(--pink2);border-radius:2px}
+.card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:12px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.6);animation:cardIn .4s ease-out}@keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 h2{font-size:18px;font-weight:700;margin-bottom:12px}
 h3{font-size:15px;font-weight:600;margin-bottom:8px}
 .tag{display:inline-block;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:500}
@@ -166,47 +166,66 @@ input:focus,textarea:focus,select:focus{border-color:var(--pink2);box-shadow:0 0
 const STORAGE = 'bingo_state';
 const defaults = () => ({
   tasks:[
-    {id:1,title:'Python if-else 练习',cat:'course',done:false,tomato:0},
-    {id:2,title:'高数极限运算法则习题',cat:'course',done:false,tomato:0},
-    {id:3,title:'四级核心词 Day3 50词',cat:'personal',done:false,tomato:0},
-    {id:4,title:'WPS 基础操作视频',cat:'course',done:false,tomato:0},
-    {id:5,title:'学生会招新报名表',cat:'club',done:false,tomato:0},
+    {id:1,title:'Python 条件判断 if-else 练习',cat:'course',done:false,tomato:0},
+    {id:2,title:'高数 极限运算法则习题',cat:'course',done:false,tomato:0},
+    {id:3,title:'四级核心词 Day3 (50词)',cat:'personal',done:false,tomato:0},
+    {id:4,title:'WPS 基础操作视频学习',cat:'course',done:false,tomato:0},
+    {id:5,title:'独立写「猜数字游戏」',cat:'course',done:false,tomato:0},
+    {id:6,title:'学生会招新报名',cat:'club',done:false,tomato:0},
   ],
   events:[
-    {id:1,title:'Python 学习',date:'2026-08-05',time:'08:30',type:'course',loc:'宿舍'},
-    {id:2,title:'高等数学 - 极限运算法则',date:'2026-08-05',time:'14:00',type:'course',loc:'B站 宋浩'},
-    {id:3,title:'WPS 基础操作',date:'2026-08-05',time:'20:00',type:'hw',loc:'B站 大猫'},
-    {id:4,title:'计算机二级考试',date:'2026-09-20',time:'09:00',type:'exam',loc:'机房'},
-    {id:5,title:'CET-4 考试',date:'2026-12-12',time:'09:00',type:'exam',loc:'教学楼'},
-    {id:6,title:'开学报到',date:'2026-08-30',time:'08:00',type:'life',loc:'华师'},
+    {id:1,title:'Python 学习 (黑马程序员)',date:'2026-08-05',time:'08:30',type:'course',loc:'线上'},
+    {id:2,title:'高等数学 极限运算法则',date:'2026-08-05',time:'14:00',type:'course',loc:'B站 宋浩'},
+    {id:3,title:'四级单词 50词',date:'2026-08-05',time:'12:30',type:'personal',loc:'APP打卡'},
+    {id:4,title:'WPS 基础操作',date:'2026-08-05',time:'20:00',type:'hw',loc:'B站 大猫'},
+    {id:5,title:'编程练习 + 高数习题',date:'2026-08-08',time:'09:00',type:'course',loc:'周六固定'},
+    {id:6,title:'计算机二级真题1套',date:'2026-08-08',time:'15:00',type:'exam',loc:'周六固定'},
+    {id:7,title:'计算机二级考试',date:'2026-09-20',time:'09:00',type:'exam',loc:'华师机房'},
+    {id:8,title:'CET-4 考试',date:'2026-12-12',time:'09:00',type:'exam',loc:'华师教学楼'},
+    {id:9,title:'开学报到',date:'2026-08-30',time:'08:00',type:'life',loc:'华中师范大学'},
+    {id:10,title:'外研杯英语演讲报名',date:'2026-09-05',time:'12:00',type:'club',loc:'线上'},
   ],
   countdowns:[
     {id:1,title:'计算机二级',date:'2026-09-20',color:'var(--orange2)'},
-    {id:2,title:'CET-4',date:'2026-12-12',color:'var(--blue2)'},
+    {id:2,title:'CET-4 600+',date:'2026-12-12',color:'var(--blue2)'},
     {id:3,title:'开学报到',date:'2026-08-30',color:'var(--green2)'},
+    {id:4,title:'暑假结束',date:'2026-08-30',color:'var(--pink2)'},
   ],
   courses:[
-    {id:1,name:'Python基础',day:1,start:1,dur:3,loc:'线上',teacher:'黑马程序员',weeks:'1-4'},
-    {id:2,name:'高等数学',day:2,start:1,dur:2,loc:'B站',teacher:'宋浩',weeks:'1-4'},
-    {id:3,name:'WPS二级',day:3,start:6,dur:2,loc:'B站',teacher:'大猫',weeks:'1-4'},
-    {id:4,name:'Python练习',day:4,start:1,dur:3,loc:'线上',teacher:'黑马',weeks:'1-4'},
-    {id:5,name:'高等数学',day:5,start:1,dur:2,loc:'B站',teacher:'宋浩',weeks:'1-4'},
-    {id:6,name:'四级听力',day:1,start:6,dur:1,loc:'宿舍',teacher:'自学',weeks:'1-4'},
-    {id:7,name:'编程项目',day:6,start:1,dur:3,loc:'线上',teacher:'黑马',weeks:'1-4'},
+    {id:1,name:'Python基础',day:1,start:1,dur:3,loc:'线上',teacher:'黑马程序员',weeks:'暑假1-4'},
+    {id:2,name:'高数(宋浩)',day:2,start:1,dur:2,loc:'B站',teacher:'宋浩',weeks:'暑假1-4'},
+    {id:3,name:'四级单词',day:3,start:6,dur:1,loc:'APP',teacher:'自学',weeks:'暑假1-4'},
+    {id:4,name:'Python练习',day:4,start:1,dur:3,loc:'线上',teacher:'黑马',weeks:'暑假1-4'},
+    {id:5,name:'高数(宋浩)',day:5,start:1,dur:2,loc:'B站',teacher:'宋浩',weeks:'暑假1-4'},
+    {id:6,name:'编程项目',day:6,start:1,dur:3,loc:'线上',teacher:'黑马',weeks:'暑假1-4'},
+    {id:7,name:'WPS二级',day:3,start:7,dur:2,loc:'B站',teacher:'大猫',weeks:'暑假1-4'},
   ],
   finances:[
     {id:1,type:'expense',amount:35,cat:'餐饮',note:'午饭外卖',date:'2026-08-04'},
-    {id:2,type:'expense',amount:12,cat:'学习',note:'笔记本',date:'2026-08-04'},
-    {id:3,type:'income',amount:200,cat:'生活费',note:'8月',date:'2026-08-01'},
+    {id:2,type:'expense',amount:12,cat:'学习',note:'高数笔记本',date:'2026-08-04'},
+    {id:3,type:'income',amount:200,cat:'生活费',note:'8月第1周',date:'2026-08-01'},
+    {id:4,type:'expense',amount:8,cat:'交通',note:'公交充值',date:'2026-08-03'},
+  ],
+  subjects:[
+    {n:'Python 零基础',p:8},
+    {n:'高等数学(上)',p:5},
+    {n:'CET-4 备考',p:3},
+    {n:'WPS 计算机二级',p:10},
+    {n:'经济学人精读',p:2},
   ],
   quiz:[
     {id:1,subj:'Python',q:'Python中定义函数的关键字是？',opts:['func','def','function','define'],ans:1,user:null},
     {id:2,subj:'Python',q:'以下哪个不是Python内置数据类型？',opts:['list','dict','array','tuple'],ans:2,user:null},
     {id:3,subj:'高数',q:'lim(x→0) sin(x)/x = ?',opts:['0','1','∞','不存在'],ans:1,user:null},
+    {id:4,subj:'高数',q:'函数f(x)在x₀可导是f(x)在x₀连续的什么条件？',opts:['充分不必要','必要不充分','充要','既不充分也不必要'],ans:0,user:null},
+    {id:5,subj:'CET-4',q:'The word "elaborate" is closest in meaning to:',opts:['simple','detailed','angry','empty'],ans:1,user:null},
   ],
   vocabLog:{},
   reviews:[],
-  notes:[],
+  notes:[
+    {id:1,title:'开学前准备清单',content:'1. 确认宿舍安排\n2. 准备证件照\n3. 了解华师保研政策\n4. 加新生群',date:'2026-08-03',type:'inspiration'},
+    {id:2,title:'保研人大关键节点',content:'大一：GPA + 四级600+ + 二级\n大二：六级550+ + 数学竞赛 + 建模\n大三：夏令营 + 论文',date:'2026-08-01',type:'meeting'},
+  ],
 });
 let S = JSON.parse(localStorage.getItem(STORAGE)) || defaults();
 function save(){localStorage.setItem(STORAGE,JSON.stringify(S))}
@@ -242,6 +261,9 @@ return`
 <div style="padding-top:8px">
   <div style="font-size:28px;font-weight:800;letter-spacing:-0.5px">${h(td)}</div>
   <div style="font-size:16px;color:var(--text2);margin-top:2px">${greet()}，比十乃又皿 🌸</div>
+  <div style="margin-top:10px;padding:10px 14px;background:linear-gradient(135deg,rgba(232,160,180,0.12),rgba(140,201,168,0.12));border-radius:12px;font-size:11px;color:var(--text2);display:flex;align-items:center;gap:8px">
+    <span style="font-size:20px">🎯</span><span><b>华师 → 人大金融专硕</b> · 高绩点 · 数学竞赛 · 四级600+ · 保研上岸</span>
+  </div>
 </div>
 <div class="card" style="margin-top:14px">
   <h3>📌 今日日程</h3>
@@ -403,6 +425,16 @@ return`
     </div>
     <div id="pomoDone" style="font-size:11px;color:var(--text2);margin-top:6px;display:${pomoRunning?'block':'none'}">🔔 结束后会弹出提醒</div>
   </div>
+</div>
+<div class="card"><h3>🗓️ 暑假第1周目标 (8/3-8/9)</h3>
+  <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Python基础语法 + 高数第一章 + 四级单词起步</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:12px">
+    <div style="padding:6px 8px;background:var(--blue);border-radius:8px">🐍 Python: if/for/while</div>
+    <div style="padding:6px 8px;background:var(--pink);border-radius:8px">📐 高数: 函数与极限</div>
+    <div style="padding:6px 8px;background:var(--yellow);border-radius:8px">🎮 写猜数字游戏</div>
+    <div style="padding:6px 8px;background:var(--green);border-radius:8px">🔤 四级: 每天50词</div>
+  </div>
+  <div style="margin-top:6px;font-size:11px;color:var(--text2)">📌 周六检查：能写猜数字 / 求基本极限 / 真题1套</div>
 </div>
 <div class="card"><h3>⏰ 考试倒计时</h3>${exams.map(function(e){var d=daysBetween(td,e.d);return'<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0"><span>'+e.n+'</span><span style="font-weight:700;font-size:18px;color:'+e.c+'">'+d+'天</span></div>'}).join('')}</div>
 <div class="card"><h3>📝 刷题</h3><div style="display:flex;gap:6px;margin-bottom:8px"><select id="quizFilter" onchange="quizMode=this.value;render();attachEvents()" style="width:auto"><option value="all">全部</option><option value="wrong">错题集</option></select><button class="btn btn-ghost btn-sm" onclick="addQuiz()">+ 添加题目</button></div><div id="quizArea">${qHTML}</div></div>
