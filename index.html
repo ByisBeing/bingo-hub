@@ -444,7 +444,7 @@ return`
 // ─── TAB 5: REVIEW ───
 function reviewPage(){
 const td2=today();const todayRev=S.reviews.find(r=>r.date===td2)||{date:td2,highlight:'',weakness:'',tomorrow:'',mood:'😊'};
-const nHTML=S.notes.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10).map(n=>`<div class="card" style="padding:12px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text2)">${n.date} · ${n.type==='inspiration'?'💡灵感':'📋会议'}</span><span class="del" style="cursor:pointer" onclick="delNote(${n.id})">×</span></div><div style="font-weight:600;font-size:14px">${n.title}</div><div style="font-size:13px;color:var(--text2);white-space:pre-wrap">${n.content}</div></div>`).join('');
+const nHTML=S.notes.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10).map(function(n){return'<div class="card" style="padding:12px" id="note-'+n.id+'"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text2)">'+n.date+' · '+(n.type==='inspiration'?'💡灵感':'📋会议')+'</span><div style="display:flex;gap:4px"><span style="cursor:pointer;font-size:13px;color:var(--blue2);padding:4px" onclick="editNote('+n.id+')">✎</span><span class="del" style="cursor:pointer;padding:4px" onclick="delNote('+n.id+')">×</span></div></div><div style="font-weight:600;font-size:14px" id="note-title-'+n.id+'">'+n.title+'</div><div style="font-size:13px;color:var(--text2);white-space:pre-wrap" id="note-content-'+n.id+'">'+n.content+'</div></div>'}).join('');
 return`
 <div class="card"><h3>📝 每日复盘</h3><div style="font-size:13px;color:var(--text2);margin-bottom:8px">${h(td2)}</div>
 <div class="review-grid">
@@ -512,7 +512,7 @@ window.courseDetail=function(id){var c=S.courses.find(function(x){return x.id===
 
 // Task kanban
 window.addTask=function(cat){const t=prompt('任务名称：');if(t){S.tasks.push({id:Date.now(),title:t,cat,done:false,tomato:0});save();render();attachEvents();initKanban()}};
-window.delTask=function(id){S.tasks=S.tasks.filter(t=>t.id!==id);save();render();attachEvents();initKanban()};
+window.delTask=function(id){S.tasks=S.tasks.filter(function(t){return t.id!==id});save();var card=document.querySelector('.kb-card[data-id="'+id+'"]');if(card){card.style.opacity='0';card.style.transform='scale(0.9)';card.style.transition='.2s';setTimeout(function(){if(card.parentNode)card.parentNode.removeChild(card)},200)}};
 window.startTomato=function(id){const t=S.tasks.find(t=>t.id===id);if(!t)return;
   let sec=25*60;const tomatoEl=document.querySelector('.kb-card[data-id="'+id+'"] .tomato');if(tomatoEl)tomatoEl.classList.add('active');
   const iv=setInterval(()=>{sec--;if(tomatoEl)tomatoEl.textContent='🍅'+Math.floor(sec/60)+':'+fmt(sec%60);if(sec<=0){clearInterval(iv);t.tomato=(t.tomato||0)+1;save();render();attachEvents();initKanban();alert('🍅 番茄钟完成！')}},1000)};
@@ -571,7 +571,8 @@ window.saveReview=function(){var td2=today();var elH=$('#revHighlight');var elW=
 window.setMood=function(e){const td2=today();let r=S.reviews.find(r=>r.date===td2);if(!r){r={date:td2,highlight:'',weakness:'',tomorrow:'',mood:e};S.reviews.unshift(r)}else r.mood=e;save();render();attachEvents()};
 window.addNote=function(){var elT=$('#noteTitle');var elC=$('#noteContent');var elTp=$('#noteType');var title=elT&&elT.value;var content=elC&&elC.value;var type=(elTp&&elTp.value)||'inspiration';if(!title||!content)return alert('请填写标题和内容');
   S.notes.unshift({id:Date.now(),title,content,type,date:today()});save();render();attachEvents()};
-window.delNote=function(id){S.notes=S.notes.filter(n=>n.id!==id);save();render();attachEvents()};
+window.delNote=function(id){S.notes=S.notes.filter(function(n){return n.id!==id});save();var card=document.getElementById('note-'+id);if(card){card.style.opacity='0';card.style.transition='.2s';setTimeout(function(){if(card.parentNode)card.parentNode.removeChild(card)},200)}};
+window.editNote=function(id){var n=S.notes.find(function(x){return x.id===id});if(!n)return;var t=prompt('标题：',n.title);if(t===null)return;var c=prompt('内容：',n.content);if(c===null)return;n.title=t;n.content=c;save();var tel=document.getElementById('note-title-'+id);var cel=document.getElementById('note-content-'+id);if(tel)tel.textContent=t;if(cel)cel.textContent=c};
 
 // Modal
 window.showModal=function(html){document.getElementById('modalContainer').innerHTML=`<div class="modal-overlay" onclick="this.remove()"><div class="modal" onclick="event.stopPropagation()">${html}<button class="btn btn-ghost btn-sm" style="width:100%;margin-top:12px" onclick="document.getElementById('modalContainer').innerHTML=''">关闭</button></div></div>`};
