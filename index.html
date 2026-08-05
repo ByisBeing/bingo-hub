@@ -10,6 +10,16 @@
 <link rel="manifest" href="data:application/json,{}">
 <title>我的大学全能管家</title>
 <script>
+// Early error catcher (before main script)
+window.onerror=function(msg,url,line,col,err){
+  var box=document.getElementById('errbox');
+  var load=document.getElementById('loading');
+  if(box){box.style.display='block';box.innerHTML='<b>❌ JS Error</b><br>'+msg+'<br>Line:'+line+' Col:'+col+(err&&err.stack?'<br><pre style="font-size:9px;overflow:auto;max-height:120px">'+err.stack+'</pre>':'')}
+  if(load)load.style.display='none';
+  return false
+};
+</script>
+<script>
 // ═══════════════ INLINE CONFETTI (no CDN needed) ═══════════════
 function confetti(opts){
   opts=opts||{};var count=opts.particleCount||80;var spread=opts.spread||70;
@@ -145,6 +155,8 @@ input:focus,textarea:focus,select:focus{border-color:var(--pink2);box-shadow:0 0
 </style>
 </head>
 <body>
+<div id="loading" style="text-align:center;padding:80px 20px;font-family:sans-serif"><h2>⏳ 加载中...</h2><p style="color:#999">我的大学全能管家</p></div>
+<div id="errbox" style="display:none;margin:16px;padding:16px;background:#ffe0e0;border-radius:12px;font-size:12px;word-break:break-all"></div>
 <div id="app"></div>
 <nav class="navbar" id="navbar"></nav>
 <div id="modalContainer"></div>
@@ -466,10 +478,13 @@ window.drawPie=function(){
 // ═══════════════ BOOT ═══════════════
 try{
   render();
+  var loadEl=document.getElementById('loading');if(loadEl)loadEl.style.display='none';
   document.getElementById('page-home').insertAdjacentHTML('beforeend',globalActions());
   setTimeout(function(){drawPie();initKanban()},600);
 }catch(e){
-  document.getElementById('app').innerHTML='<div style="padding:40px;text-align:center"><h2>😵 加载出错</h2><p>请刷新页面重试</p><pre style="font-size:10px;color:#999">'+e.message+'</pre></div>';
+  var box=document.getElementById('errbox');
+  if(box){box.style.display='block';box.innerHTML='<b>❌ Boot Error:</b><br>'+e.message+'<br><pre>'+e.stack+'</pre>'}
+  var loadEl2=document.getElementById('loading');if(loadEl2)loadEl2.style.display='none';
 }
 
 // Auto-save on beforeunload
