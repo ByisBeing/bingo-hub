@@ -383,13 +383,13 @@ var qHTML=qlist.map(function(q,i){return'<div class="quiz-card"><div style="font
 // Vocab heatmap
 var vHTML='';var nowD=new Date();for(var i=29;i>=0;i--){var d=new Date(nowD);d.setDate(d.getDate()-i);var ds=d.getFullYear()+'-'+fmt(d.getMonth()+1)+'-'+fmt(d.getDate());var cnt=S.vocabLog[ds]||0;var alpha=cnt>0?Math.min(0.3+cnt*0.07,1):0.05;vHTML+='<span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:var(--green2);opacity:'+alpha+';margin:1px" title="'+ds+': '+cnt+'词"></span>'}
 
-var pomoDisplay=pomoRunning?'<span style="font-size:32px;font-weight:800;color:var(--pink2)">'+fmt(Math.floor(pomoSec/60))+':'+fmt(pomoSec%60)+'</span>':'<span style="font-size:32px;font-weight:800;color:var(--gray2)">'+fmt(Math.floor(pomoTotal/60))+':00</span>';
+var pomoInit=pomoTotal||0;var pomoShow=pomoRunning?pomoSec:pomoInit;
 
 return`
 <div class="card"><h3>📊 科目进度</h3>${subsHTML}</div>
 <div class="card"><h3>🍅 番茄钟</h3>
   <div style="text-align:center;padding:8px 0">
-    <div style="margin-bottom:8px">${pomoDisplay}</div>
+    <div style="margin-bottom:8px"><span id="pomoTime" style="font-size:32px;font-weight:800;color:${pomoRunning?'var(--pink2)':'var(--gray2)'}">${fmt(Math.floor(pomoShow/60))}:${fmt(pomoShow%60)}</span></div>
     <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:8px">
       <button class="btn btn-ghost btn-sm" onclick="setPomo(25)">25分钟</button>
       <button class="btn btn-ghost btn-sm" onclick="setPomo(40)">40分钟</button>
@@ -400,7 +400,7 @@ return`
       <button class="btn btn-primary btn-sm" onclick="togglePomo()" id="pomoBtn">${pomoRunning?'⏸ 暂停':'▶ 开始'}</button>
       <button class="btn btn-ghost btn-sm" onclick="resetPomo()">↺ 重置</button>
     </div>
-    ${pomoRunning?'<div style="font-size:11px;color:var(--text2);margin-top:6px">🔔 结束后会弹出提醒</div>':''}
+    <div id="pomoDone" style="font-size:11px;color:var(--text2);margin-top:6px;display:${pomoRunning?'block':'none'}">🔔 结束后会弹出提醒</div>
   </div>
 </div>
 <div class="card"><h3>⏰ 考试倒计时</h3>${exams.map(function(e){var d=daysBetween(td,e.d);return'<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0"><span>'+e.n+'</span><span style="font-weight:700;font-size:18px;color:'+e.c+'">'+d+'天</span></div>'}).join('')}</div>
@@ -499,20 +499,29 @@ window.addQuiz=function(){const subj=prompt('科目：');if(!subj)return;const q
 window.adjProgress=function(idx,delta){if(!S.subjects||!S.subjects[idx])return;S.subjects[idx].p=Math.max(0,Math.min(100,S.subjects[idx].p+delta));save();render();attachEvents()};
 window.addSubject=function(){var el=$('#newSubj');var name=el&&el.value;if(!name)return alert('请输入科目名');S.subjects=S.subjects||[];S.subjects.push({n:name,p:0});save();render();attachEvents()};
 
-// Pomodoro timer
-window.setPomo=function(min){pomoTotal=min*60;pomoSec=pomoTotal;pomoRunning=false;if(pomoTimer)clearInterval(pomoTimer);render();attachEvents()};
+// Pomodoro timer (direct DOM update, no re-render)
+window.setPomo=function(min){pomoTotal=min*60;pomoSec=pomoTotal;pomoRunning=false;if(pomoTimer)clearInterval(pomoTimer);pomoTimer=null;updatePomoDisplay()};
 window.togglePomo=function(){
   if(!pomoTotal){var custom=$('#customPomo');var cmin=parseInt(custom&&custom.value)||25;pomoTotal=cmin*60;pomoSec=pomoTotal}
-  if(pomoRunning){pomoRunning=false;if(pomoTimer)clearInterval(pomoTimer);render();attachEvents();return}
-  pomoRunning=true;render();attachEvents();
+  if(pomoRunning){pomoRunning=false;if(pomoTimer)clearInterval(pomoTimer);pomoTimer=null;updatePomoDisplay();return}
+  pomoRunning=true;updatePomoDisplay();
   pomoTimer=setInterval(function(){
-    pomoSec--;if(pomoSec<=0){pomoRunning=false;clearInterval(pomoTimer);render();attachEvents();
+    pomoSec--;updatePomoDisplay();
+    if(pomoSec<=0){pomoRunning=false;clearInterval(pomoTimer);pomoTimer=null;updatePomoDisplay();
       if(typeof navigator!=='undefined'&&navigator.vibrate)navigator.vibrate([200,100,200]);
-      alert('🍅 番茄钟完成！休息一下吧~')}
-    if(pomoSec%5===0)render();attachEvents();
+      setTimeout(function(){alert('🍅 番茄钟完成！休息一下吧~')},100)}
   },1000)
 };
-window.resetPomo=function(){pomoRunning=false;if(pomoTimer)clearInterval(pomoTimer);pomoSec=0;pomoTotal=0;render();attachEvents()};
+window.resetPomo=function(){pomoRunning=false;if(pomoTimer)clearInterval(pomoTimer);pomoTimer=null;pomoSec=0;pomoTotal=0;updatePomoDisplay()};
+
+function updatePomoDisplay(){
+  var el=document.getElementById('pomoTime');if(!el)return;
+  var sec=pomoSec||pomoTotal||0;
+  el.textContent=fmt(Math.floor(sec/60))+':'+fmt(sec%60);
+  el.style.color=pomoRunning?'var(--pink2)':'var(--gray2)';
+  var btn=document.getElementById('pomoBtn');if(btn)btn.textContent=pomoRunning?'⏸ 暂停':'▶ 开始';
+  var tip=document.getElementById('pomoDone');if(tip)tip.style.display=pomoRunning?'block':'none';
+}
 
 // Vocab
 window.logVocab=function(){var el=$('#vocabCount');var cnt=parseInt(el&&el.value)||0;if(cnt<=0)return;var td2=today();S.vocabLog[td2]=(S.vocabLog[td2]||0)+cnt;save();render();attachEvents();confetti({particleCount:80,spread:60,origin:{y:0.5},colors:['#8cc9a8','#a0d8b0','#d4ece0','#f0d58c']});alert('✅ 已打卡 '+cnt+' 词！')};
