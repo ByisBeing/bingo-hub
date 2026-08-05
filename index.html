@@ -364,19 +364,46 @@ return`
 
 // ─── TAB 4: STUDY ───
 var quizMode='all';
+var pomoTimer=null,pomoSec=0,pomoRunning=false,pomoTotal=0;
+
 function studyPage(){
-var subs=[{n:'Python',p:15,c:'var(--blue2)'},{n:'高等数学',p:10,c:'var(--pink2)'},{n:'CET-4',p:8,c:'var(--orange2)'},{n:'WPS二级',p:12,c:'var(--green2)'}];
+// Subjects from state (editable)
+if(!S.subjects||!S.subjects.length)S.subjects=[{n:'Python',p:15},{n:'高等数学',p:10},{n:'CET-4',p:8},{n:'WPS二级',p:12}];
+var subColors=['var(--blue2)','var(--pink2)','var(--orange2)','var(--green2)'];
+var subsHTML=S.subjects.map(function(s,i){
+  return '<div style="margin-bottom:8px"><div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;gap:8px"><span style="flex:1">'+s.n+'</span><button class="btn btn-ghost btn-sm" style="min-width:28px;min-height:28px;padding:0;font-size:14px" onclick="adjProgress('+i+',-5)">−</button><span style="font-weight:700;min-width:32px;text-align:center">'+s.p+'%</span><button class="btn btn-ghost btn-sm" style="min-width:28px;min-height:28px;padding:0;font-size:14px" onclick="adjProgress('+i+',5)">+</button></div><div class="progress-bar"><div class="progress-fill" style="width:'+s.p+'%;background:'+(subColors[i%4])+'"></div></div></div>'
+}).join('');
+subsHTML+='<div style="display:flex;gap:6px;margin-top:8px"><input id="newSubj" placeholder="新科目名" style="font-size:12px;flex:1"><button class="btn btn-ghost btn-sm" onclick="addSubject()">+ 添加科目</button></div>';
+
 var exams=[{n:'计算机二级',d:'2026-09-20',c:'var(--orange2)'},{n:'CET-4',d:'2026-12-12',c:'var(--blue2)'},{n:'期末',d:'2027-01-10',c:'var(--pink2)'}];
 var td=today();
 var qlist=S.quiz;if(quizMode==='wrong')qlist=S.quiz.filter(function(q){return q.user!==null&&q.user!==q.ans});
 var qHTML=qlist.map(function(q,i){return'<div class="quiz-card"><div style="font-size:12px;color:var(--text2)">'+q.subj+' · 第'+(i+1)+'题</div><div style="font-weight:600;margin:6px 0">'+q.q+'</div>'+q.opts.map(function(o,j){return'<div class="quiz-opt'+(q.user!==null?(j===q.ans?' correct':j===q.user&&j!==q.ans?' wrong':''):'')+'" onclick="answerQuiz('+q.id+','+j+')">'+('ABCD'[j])+'. '+o+'</div>'}).join('')+(q.user!==null?(q.user===q.ans?'<div style="color:#4a9a6a;font-weight:600;margin-top:4px">✅ 正确！</div>':'<div style="color:#c06050;font-weight:600;margin-top:4px">❌ 正确答案是 '+String.fromCharCode(65+q.ans)+'</div>'):'')+'</div>'}).join('');
 
 // Vocab heatmap
-let vHTML='';const nowD=new Date();for(let i=29;i>=0;i--){const d=new Date(nowD);d.setDate(d.getDate()-i);const ds=d.getFullYear()+'-'+fmt(d.getMonth()+1)+'-'+fmt(d.getDate());const cnt=S.vocabLog[ds]||0;const alpha=cnt>0?Math.min(0.3+cnt*0.07,1):0.05;vHTML+=`<span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:var(--green2);opacity:${alpha};margin:1px" title="${ds}: ${cnt}词"></span>`}
+var vHTML='';var nowD=new Date();for(var i=29;i>=0;i--){var d=new Date(nowD);d.setDate(d.getDate()-i);var ds=d.getFullYear()+'-'+fmt(d.getMonth()+1)+'-'+fmt(d.getDate());var cnt=S.vocabLog[ds]||0;var alpha=cnt>0?Math.min(0.3+cnt*0.07,1):0.05;vHTML+='<span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:var(--green2);opacity:'+alpha+';margin:1px" title="'+ds+': '+cnt+'词"></span>'}
+
+var pomoDisplay=pomoRunning?'<span style="font-size:32px;font-weight:800;color:var(--pink2)">'+fmt(Math.floor(pomoSec/60))+':'+fmt(pomoSec%60)+'</span>':'<span style="font-size:32px;font-weight:800;color:var(--gray2)">'+fmt(Math.floor(pomoTotal/60))+':00</span>';
 
 return`
-<div class="card"><h3>📊 科目进度</h3>${subs.map(s=>`<div><div style="display:flex;justify-content:space-between;font-size:13px"><span>${s.n}</span><span>${s.p}%</span></div><div class="progress-bar"><div class="progress-fill" style="width:${s.p}%;background:${s.c}"></div></div></div>`).join('')}</div>
-<div class="card"><h3>⏰ 考试倒计时</h3>${exams.map(e=>{const d=daysBetween(td,e.d);return`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0"><span>${e.n}</span><span style="font-weight:700;font-size:18px;color:${e.c}">${d}天</span></div>`}).join('')}</div>
+<div class="card"><h3>📊 科目进度</h3>${subsHTML}</div>
+<div class="card"><h3>🍅 番茄钟</h3>
+  <div style="text-align:center;padding:8px 0">
+    <div style="margin-bottom:8px">${pomoDisplay}</div>
+    <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:8px">
+      <button class="btn btn-ghost btn-sm" onclick="setPomo(25)">25分钟</button>
+      <button class="btn btn-ghost btn-sm" onclick="setPomo(40)">40分钟</button>
+      <button class="btn btn-ghost btn-sm" onclick="setPomo(50)">50分钟</button>
+      <input id="customPomo" type="number" placeholder="自定义" style="width:64px;font-size:12px;min-height:30px;flex:0" min="1">
+    </div>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button class="btn btn-primary btn-sm" onclick="togglePomo()" id="pomoBtn">${pomoRunning?'⏸ 暂停':'▶ 开始'}</button>
+      <button class="btn btn-ghost btn-sm" onclick="resetPomo()">↺ 重置</button>
+    </div>
+    ${pomoRunning?'<div style="font-size:11px;color:var(--text2);margin-top:6px">🔔 结束后会弹出提醒</div>':''}
+  </div>
+</div>
+<div class="card"><h3>⏰ 考试倒计时</h3>${exams.map(function(e){var d=daysBetween(td,e.d);return'<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0"><span>'+e.n+'</span><span style="font-weight:700;font-size:18px;color:'+e.c+'">'+d+'天</span></div>'}).join('')}</div>
 <div class="card"><h3>📝 刷题</h3><div style="display:flex;gap:6px;margin-bottom:8px"><select id="quizFilter" onchange="quizMode=this.value;render();attachEvents()" style="width:auto"><option value="all">全部</option><option value="wrong">错题集</option></select><button class="btn btn-ghost btn-sm" onclick="addQuiz()">+ 添加题目</button></div><div id="quizArea">${qHTML}</div></div>
 <div class="card"><h3>📖 单词打卡</h3><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><input id="vocabCount" type="number" value="50" style="width:70px;flex:0" placeholder="词数"><button class="btn btn-primary btn-sm" onclick="logVocab()">打卡</button></div><div style="overflow-x:auto;white-space:nowrap">${vHTML}</div></div>`;
 }
@@ -467,6 +494,25 @@ window.exportCSV=function(){let csv='类型,金额,分类,备注,日期\n';S.fin
 window.answerQuiz=function(id,idx){const q=S.quiz.find(q=>q.id===id);if(!q||q.user!==null)return;q.user=idx;save();render();attachEvents()};
 window.addQuiz=function(){const subj=prompt('科目：');if(!subj)return;const q=prompt('题目：');if(!q)return;const opts=[];for(let i=0;i<4;i++){const o=prompt('选项'+(i+1)+'：');if(!o)return;opts.push(o)}const ans=parseInt(prompt('正确答案(1-4)：'))-1;if(ans<0||ans>3)return;
   S.quiz.push({id:Date.now(),subj,q,opts,ans,user:null});save();render();attachEvents()};
+
+// Subject progress
+window.adjProgress=function(idx,delta){if(!S.subjects||!S.subjects[idx])return;S.subjects[idx].p=Math.max(0,Math.min(100,S.subjects[idx].p+delta));save();render();attachEvents()};
+window.addSubject=function(){var el=$('#newSubj');var name=el&&el.value;if(!name)return alert('请输入科目名');S.subjects=S.subjects||[];S.subjects.push({n:name,p:0});save();render();attachEvents()};
+
+// Pomodoro timer
+window.setPomo=function(min){pomoTotal=min*60;pomoSec=pomoTotal;pomoRunning=false;if(pomoTimer)clearInterval(pomoTimer);render();attachEvents()};
+window.togglePomo=function(){
+  if(!pomoTotal){var custom=$('#customPomo');var cmin=parseInt(custom&&custom.value)||25;pomoTotal=cmin*60;pomoSec=pomoTotal}
+  if(pomoRunning){pomoRunning=false;if(pomoTimer)clearInterval(pomoTimer);render();attachEvents();return}
+  pomoRunning=true;render();attachEvents();
+  pomoTimer=setInterval(function(){
+    pomoSec--;if(pomoSec<=0){pomoRunning=false;clearInterval(pomoTimer);render();attachEvents();
+      if(typeof navigator!=='undefined'&&navigator.vibrate)navigator.vibrate([200,100,200]);
+      alert('🍅 番茄钟完成！休息一下吧~')}
+    if(pomoSec%5===0)render();attachEvents();
+  },1000)
+};
+window.resetPomo=function(){pomoRunning=false;if(pomoTimer)clearInterval(pomoTimer);pomoSec=0;pomoTotal=0;render();attachEvents()};
 
 // Vocab
 window.logVocab=function(){var el=$('#vocabCount');var cnt=parseInt(el&&el.value)||0;if(cnt<=0)return;var td2=today();S.vocabLog[td2]=(S.vocabLog[td2]||0)+cnt;save();render();attachEvents();alert('✅ 已打卡 '+cnt+' 词！')};
