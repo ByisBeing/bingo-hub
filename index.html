@@ -460,7 +460,12 @@ return`
 }
 
 // Countdown management
-window.addCountdown=function(){var t=prompt('倒计时名称（如：CET-4考试）：');if(!t)return;var d=prompt('日期（如：2026-12-12）：');if(!d)return;S.countdowns.push({id:Date.now(),title:t,date:d,color:'var(--pink2)'});save();render();attachEvents()};
+window.addCountdown=function(){var t=prompt('倒计时名称：');if(!t)return;var d=prompt('日期（2026-12-12）：');if(!d)return;var cd={id:Date.now(),title:t,date:d,color:'var(--pink2)'};S.countdowns.push(cd);save();
+  var td=today();var days=daysBetween(td,cd.date);var c=days<=7?'#e8a0b4':days<=30?'var(--orange2)':'var(--green2)';
+  var row=document.querySelector('.countdown-row');if(!row)return;
+  var card=document.createElement('div');card.className='cd-card';card.style.cssText='background:'+c+'15;position:relative;animation:cardIn .3s ease-out';
+  card.innerHTML='<span style="position:absolute;top:4px;right:8px;font-size:14px;color:var(--gray2);cursor:pointer" onclick="event.stopPropagation();delCountdown('+cd.id+')">×</span><div class="cd-num" style="color:'+c+'">'+days+'</div><div style="font-size:13px;font-weight:600">'+cd.title+'</div><div class="cd-label">天后</div>';
+  row.appendChild(card)};
 window.delCountdown=function(id){if(!confirm('删除这个倒计时？'))return;S.countdowns=S.countdowns.filter(function(c){return c.id!==id});save();var card=document.querySelector('.cd-card[onclick*="'+id+'"]');if(!card)card=document.querySelector('.cd-card span[onclick*="'+id+'"]');if(card){card.style.opacity='0';card.style.transform='scale(0.8)';card.style.transition='.2s';setTimeout(function(){if(card.parentNode)card.parentNode.removeChild(card)},200)}};
 
 // Finance delete
@@ -492,9 +497,9 @@ document.querySelectorAll('.nav-item').forEach(b=>b.onclick=function(){
 });
 
 document.querySelectorAll('.check-row input[type=checkbox]').forEach(cb=>cb.onchange=function(){
-  const tid=parseInt(this.dataset.tid);const t=S.tasks.find(t=>t.id===tid);if(t){t.done=this.checked;save()}
-  if(this.checked&&S.tasks.every(t=>t.done)){confetti({particleCount:120,spread:80,origin:{y:0.6},colors:['#e8a0b4','#f0d58c','#8cc9a8','#d4eaf5']});setTimeout(()=>confetti({particleCount:60,spread:100,origin:{y:0.5},colors:['#ffb5c2','#ffeaa7']}),300)}
-  setTimeout(()=>{render();attachEvents()},400);
+  var tid=parseInt(this.dataset.tid);var t=S.tasks.find(t=>t.id===tid);if(t){t.done=this.checked;save()}
+  var label=this.parentNode.querySelector('.check-label');if(label){if(this.checked)label.style.cssText='text-decoration:line-through;color:var(--gray2)';else label.style.cssText='text-decoration:none;color:var(--text)'}
+  if(this.checked&&S.tasks.filter(function(t){return !t.done}).length===0){confetti({particleCount:120,spread:80,origin:{y:0.6},colors:['#e8a0b4','#f0d58c','#8cc9a8','#d4eaf5']});setTimeout(function(){confetti({particleCount:60,spread:100,origin:{y:0.5},colors:['#ffb5c2','#ffeaa7']})},300)}
 });
 
 } // <-- closes attachEvents
@@ -511,20 +516,44 @@ window.changeMonth=function(delta){calOffset+=delta;render();attachEvents();docu
 window.courseDetail=function(id){var c=S.courses.find(function(x){return x.id===id});if(c)showModal('<h3>'+c.name+'</h3><p>📍 '+c.loc+'</p><p>👨‍🏫 '+c.teacher+'</p><p>📅 第'+c.weeks+'周</p><p>⏰ 周'+c.day+' 第'+c.start+'-'+(c.start+c.dur-1)+'节</p><button class="btn btn-ghost btn-sm" style="color:#c06050;width:100%;margin-top:8px" onclick="delCourse('+c.id+');document.getElementById(\'modalContainer\').innerHTML=\'\'">🗑 删除此课程</button>')};
 
 // Task kanban
-window.addTask=function(cat){const t=prompt('任务名称：');if(t){S.tasks.push({id:Date.now(),title:t,cat,done:false,tomato:0});save();render();attachEvents();initKanban()}};
+window.addTask=function(cat){var t=prompt('任务名称：');if(!t)return;var task={id:Date.now(),title:t,cat:cat,done:false,tomato:0};S.tasks.push(task);save();
+  var col=document.querySelector('.kb-list[data-cat="'+cat+'"]');if(!col)return;
+  var card=document.createElement('div');card.className='kb-card';card.setAttribute('data-id',task.id);card.style.animation='cardIn .3s ease-out';
+  card.innerHTML='<span>'+t+'</span><span class="tomato" onclick="event.stopPropagation();startTomato('+task.id+')">🍅</span><span class="del" onclick="event.stopPropagation();delTask('+task.id+')">×</span>';
+  col.insertBefore(card,col.querySelector('button')||null);initKanban()};
 window.delTask=function(id){S.tasks=S.tasks.filter(function(t){return t.id!==id});save();var card=document.querySelector('.kb-card[data-id="'+id+'"]');if(card){card.style.opacity='0';card.style.transform='scale(0.9)';card.style.transition='.2s';setTimeout(function(){if(card.parentNode)card.parentNode.removeChild(card)},200)}};
-window.startTomato=function(id){const t=S.tasks.find(t=>t.id===id);if(!t)return;
-  let sec=25*60;const tomatoEl=document.querySelector('.kb-card[data-id="'+id+'"] .tomato');if(tomatoEl)tomatoEl.classList.add('active');
-  const iv=setInterval(()=>{sec--;if(tomatoEl)tomatoEl.textContent='🍅'+Math.floor(sec/60)+':'+fmt(sec%60);if(sec<=0){clearInterval(iv);t.tomato=(t.tomato||0)+1;save();render();attachEvents();initKanban();alert('🍅 番茄钟完成！')}},1000)};
+window.startTomato=function(id){var t=S.tasks.find(function(t){return t.id===id});if(!t)return;
+  var sec=25*60;var tomatoEl=document.querySelector('.kb-card[data-id="'+id+'"] .tomato');if(tomatoEl)tomatoEl.classList.add('active');
+  var iv=setInterval(function(){sec--;if(tomatoEl)tomatoEl.textContent='🍅'+Math.floor(sec/60)+':'+fmt(sec%60);if(sec<=0){clearInterval(iv);t.tomato=(t.tomato||0)+1;save();if(tomatoEl){tomatoEl.textContent='🍅'+t.tomato;tomatoEl.classList.remove('active')};alert('🍅 番茄钟完成！')}},1000)};
 
 // Finance
 window.addFinance=function(){var elType=$('#finType');var elAmt=$('#finAmt');var elCat=$('#finCat');var elNote=$('#finNote');var type=(elType&&elType.value)||'expense';var amt=parseFloat(elAmt&&elAmt.value);var cat=(elCat&&elCat.value)||'其他';var note=(elNote&&elNote.value)||'';if(!amt||amt<=0)return alert('请输入金额');
-  S.finances.push({id:Date.now(),type,amount:amt,cat,note,date:today()});save();render();attachEvents();drawPie()};
+  var f={id:Date.now(),type:type,amount:amt,cat:cat,note:note,date:today()};S.finances.push(f);save();
+  // Insert at top of finance list
+  var list=document.querySelector('.fin-item');var parent=list?list.parentNode:null;if(parent){
+    var div=document.createElement('div');div.className='fin-item';div.id='fin-'+f.id;div.style.animation='cardIn .3s ease-out';
+    div.innerHTML='<div style="flex:1"><div style="font-size:13px;font-weight:500">'+(f.note||f.cat)+'</div><div style="font-size:11px;color:var(--text2)">'+f.date+' · '+f.cat+'</div></div><div class="fin-amt '+(f.type==='income'?'fin-in':'fin-out')+'">'+(f.type==='income'?'+':'-')+'¥'+f.amount+'</div><span style="font-size:14px;color:var(--gray2);cursor:pointer;padding:4px" onclick="delFinance('+f.id+')">×</span>';
+    parent.insertBefore(div,parent.firstChild)
+  }
+  drawPie();
+  if(elAmt)elAmt.value='';if(elNote)elNote.value=''};
 window.exportCSV=function(){let csv='类型,金额,分类,备注,日期\n';S.finances.forEach(f=>{csv+=`${f.type==='income'?'收入':'支出'},${f.amount},${f.cat},${f.note},${f.date}\n`});
   const blob=new Blob(['﻿'+csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='账本_'+today()+'.csv';a.click()};
 
 // Quiz
-window.answerQuiz=function(id,idx){const q=S.quiz.find(q=>q.id===id);if(!q||q.user!==null)return;q.user=idx;save();render();attachEvents()};
+window.answerQuiz=function(id,idx){var q=S.quiz.find(function(qq){return qq.id===id});if(!q||q.user!==null)return;q.user=idx;save();
+  // Find the quiz card and update options highlighting
+  var cards=document.querySelectorAll('.quiz-card');cards.forEach(function(card){
+    var btns=card.querySelectorAll('.quiz-opt');btns.forEach(function(btn,j){
+      if(btn.getAttribute('onclick')&&btn.getAttribute('onclick').indexOf(''+id)>-1){
+        btn.className='quiz-opt'+(j===q.ans?' correct':j===idx&&j!==q.ans?' wrong':'');
+        if(j===q.ans&&j===idx){var fb=card.querySelector('div[style]');if(!fb||!fb.textContent.match(/✅|❌/)){
+          var dv=document.createElement('div');dv.style.cssText='color:#4a9a6a;font-weight:600;margin-top:4px';dv.textContent='✅ 正确！';card.appendChild(dv)}
+        }else if(j===idx&&j!==q.ans){
+          var dv2=document.createElement('div');dv2.style.cssText='color:#c06050;font-weight:600;margin-top:4px';dv2.textContent='❌ 正确答案是 '+String.fromCharCode(65+q.ans);card.appendChild(dv2)}
+      }
+    })
+  })};
 window.addQuiz=function(){const subj=prompt('科目：');if(!subj)return;const q=prompt('题目：');if(!q)return;const opts=[];for(let i=0;i<4;i++){const o=prompt('选项'+(i+1)+'：');if(!o)return;opts.push(o)}const ans=parseInt(prompt('正确答案(1-4)：'))-1;if(ans<0||ans>3)return;
   S.quiz.push({id:Date.now(),subj,q,opts,ans,user:null});save();render();attachEvents()};
 
@@ -532,7 +561,12 @@ window.addQuiz=function(){const subj=prompt('科目：');if(!subj)return;const q
 window.adjProgress=function(idx,delta){if(!S.subjects||!S.subjects[idx])return;S.subjects[idx].p=Math.max(0,Math.min(100,S.subjects[idx].p+delta));save();
   var bar=document.getElementById('prog-'+idx);if(bar)bar.style.width=S.subjects[idx].p+'%';
   var txt=document.getElementById('prog-txt-'+idx);if(txt)txt.textContent=S.subjects[idx].p+'%';};
-window.addSubject=function(){var el=$('#newSubj');var name=el&&el.value;if(!name)return alert('请输入科目名');S.subjects=S.subjects||[];S.subjects.push({n:name,p:0});save();render();attachEvents()};
+window.addSubject=function(){var el=$('#newSubj');var name=el&&el.value;if(!name)return alert('请输入科目名');S.subjects=S.subjects||[];var idx=S.subjects.length;S.subjects.push({n:name,p:0});save();
+  var subColors=['var(--blue2)','var(--pink2)','var(--orange2)','var(--green2)'];
+  var div=document.createElement('div');div.style.cssText='margin-bottom:8px;animation:cardIn .3s ease-out';
+  div.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;gap:8px"><span style="flex:1">'+name+'</span><button class="btn btn-ghost btn-sm" style="min-width:28px;min-height:28px;padding:0;font-size:14px" onclick="adjProgress('+idx+',-5)">−</button><span style="font-weight:700;min-width:32px;text-align:center" id="prog-txt-'+idx+'">0%</span><button class="btn btn-ghost btn-sm" style="min-width:28px;min-height:28px;padding:0;font-size:14px" onclick="adjProgress('+idx+',5)">+</button></div><div class="progress-bar"><div class="progress-fill" id="prog-'+idx+'" style="width:0%;background:'+(subColors[idx%4])+'"></div></div>';
+  var list=el?el.closest('.card'):null;if(list)list.appendChild(div);
+  if(el)el.value=''};
 
 // Pomodoro timer (requestAnimationFrame for 60fps smoothness)
 window.setPomo=function(min){pomoTotal=min*60;pomoSec=pomoTotal;pomoRunning=false;if(pomoTimer)cancelAnimationFrame(pomoTimer);pomoTimer=null;updatePomoDisplay()};
@@ -565,14 +599,21 @@ function updatePomoDisplay(){
 }
 
 // Vocab
-window.logVocab=function(){var el=$('#vocabCount');var cnt=parseInt(el&&el.value)||0;if(cnt<=0)return;var td2=today();S.vocabLog[td2]=(S.vocabLog[td2]||0)+cnt;save();render();attachEvents();confetti({particleCount:80,spread:60,origin:{y:0.5},colors:['#8cc9a8','#a0d8b0','#d4ece0','#f0d58c']});alert('✅ 已打卡 '+cnt+' 词！')};
+window.logVocab=function(){var el=$('#vocabCount');var cnt=parseInt(el&&el.value)||0;if(cnt<=0)return;var td2=today();S.vocabLog[td2]=(S.vocabLog[td2]||0)+cnt;save();confetti({particleCount:80,spread:60,origin:{y:0.5},colors:['#8cc9a8','#a0d8b0','#d4ece0','#f0d58c']});alert('✅ 已打卡 '+cnt+' 词！')};
 
 // Review
 window.saveReview=function(){var td2=today();var elH=$('#revHighlight');var elW=$('#revWeakness');var elT=$('#revTomorrow');var oldRv=S.reviews.find(function(r){return r.date===td2});var rev={date:td2,highlight:(elH&&elH.value)||'',weakness:(elW&&elW.value)||'',tomorrow:(elT&&elT.value)||'',mood:(oldRv&&oldRv.mood)||'😊'};
-  const idx=S.reviews.findIndex(r=>r.date===td2);if(idx>=0)S.reviews[idx]=rev;else S.reviews.unshift(rev);save();render();attachEvents();alert('✅ 复盘已保存')};
-window.setMood=function(e){const td2=today();let r=S.reviews.find(r=>r.date===td2);if(!r){r={date:td2,highlight:'',weakness:'',tomorrow:'',mood:e};S.reviews.unshift(r)}else r.mood=e;save();render();attachEvents()};
+  var idx=S.reviews.findIndex(function(r){return r.date===td2});if(idx>=0)S.reviews[idx]=rev;else S.reviews.unshift(rev);save();alert('✅ 复盘已保存')};
+window.setMood=function(e){var td2=today();var r=S.reviews.find(function(r){return r.date===td2});if(!r){r={date:td2,highlight:'',weakness:'',tomorrow:'',mood:e};S.reviews.unshift(r)}else r.mood=e;save();
+  var emojis=document.querySelectorAll('.rv-cell span[style*="cursor:pointer"]');emojis.forEach(function(el){el.style.background=''});};
 window.addNote=function(){var elT=$('#noteTitle');var elC=$('#noteContent');var elTp=$('#noteType');var title=elT&&elT.value;var content=elC&&elC.value;var type=(elTp&&elTp.value)||'inspiration';if(!title||!content)return alert('请填写标题和内容');
-  S.notes.unshift({id:Date.now(),title,content,type,date:today()});save();render();attachEvents()};
+  var n={id:Date.now(),title:title,content:content,type:type,date:today()};S.notes.unshift(n);save();
+  // Find the notes container (after the add form card)
+  var formCard=elT?elT.closest('.card'):null;if(!formCard)return;
+  var div=document.createElement('div');div.className='card';div.id='note-'+n.id;div.style.cssText='padding:12px;animation:cardIn .3s ease-out';
+  div.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text2)">'+n.date+' · '+(n.type==='inspiration'?'💡灵感':'📋会议')+'</span><div style="display:flex;gap:4px"><span style="cursor:pointer;font-size:13px;color:var(--blue2);padding:4px" onclick="editNote('+n.id+')">✎</span><span class="del" style="cursor:pointer;padding:4px" onclick="delNote(\''+n.id+'\')">×</span></div></div><div style="font-weight:600;font-size:14px" id="note-title-'+n.id+'">'+n.title+'</div><div style="font-size:13px;color:var(--text2);white-space:pre-wrap" id="note-content-'+n.id+'">'+n.content+'</div>';
+  formCard.parentNode.insertBefore(div,formCard.nextSibling);
+  if(elT)elT.value='';if(elC)elC.value=''};
 window.delNote=function(id){S.notes=S.notes.filter(function(n){return n.id!==id});save();var card=document.getElementById('note-'+id);if(card){card.style.opacity='0';card.style.transition='.2s';setTimeout(function(){if(card.parentNode)card.parentNode.removeChild(card)},200)}};
 window.editNote=function(id){var n=S.notes.find(function(x){return x.id===id});if(!n)return;var tel=document.getElementById('note-title-'+id);var cel=document.getElementById('note-content-'+id);if(!tel||!cel)return;
   // Swap to inputs
@@ -616,7 +657,7 @@ window.initKanban=function(){
       card.style.opacity='';card.style.zIndex='';card.style.position='';card.style.left='';card.style.top='';
       var target=document.elementFromPoint(e.changedTouches[0].clientX,e.changedTouches[0].clientY);
       var col=target?target.closest('.kb-list'):null;
-      if(col){var id=parseInt(card.dataset.id);var t=S.tasks.find(function(t){return t.id===id});if(t){t.cat=col.dataset.cat;save();render();attachEvents();initKanban()}}
+      if(col&&col!==card.parentNode){var id=parseInt(card.dataset.id);var t=S.tasks.find(function(t){return t.id===id});if(t){t.cat=col.dataset.cat;save();col.appendChild(card);initKanban()}}
       card._dragStart=null})
   })
 };
