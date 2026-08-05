@@ -443,17 +443,21 @@ return`
 
 // ─── TAB 5: REVIEW ───
 function reviewPage(){
-const td2=today();const todayRev=S.reviews.find(r=>r.date===td2)||{date:td2,highlight:'',weakness:'',tomorrow:'',mood:'😊'};
-const nHTML=S.notes.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10).map(function(n){return'<div class="card" style="padding:12px" id="note-'+n.id+'"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text2)">'+n.date+' · '+(n.type==='inspiration'?'💡灵感':'📋会议')+'</span><div style="display:flex;gap:4px"><span style="cursor:pointer;font-size:13px;color:var(--blue2);padding:4px" onclick="editNote('+n.id+')">✎</span><span class="del" style="cursor:pointer;padding:4px" onclick="delNote('+n.id+')">×</span></div></div><div style="font-weight:600;font-size:14px" id="note-title-'+n.id+'">'+n.title+'</div><div style="font-size:13px;color:var(--text2);white-space:pre-wrap" id="note-content-'+n.id+'">'+n.content+'</div></div>'}).join('');
+var td2=today();var todayRev=S.reviews.find(function(r){return r.date===td2})||{date:td2,highlight:'',weakness:'',tomorrow:'',mood:'😊'};
+var nHTML=S.notes.sort(function(a,b){return b.date.localeCompare(a.date)}).slice(0,10).map(function(n){return'<div class="card" style="padding:12px" id="note-'+n.id+'"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text2)">'+n.date+' · '+(n.type==='inspiration'?'💡灵感':'📋会议')+'</span><div style="display:flex;gap:4px"><span style="cursor:pointer;font-size:13px;color:var(--blue2);padding:4px" onclick="editNote('+n.id+')">✎</span><span class="del" style="cursor:pointer;padding:4px" onclick="delNote(\''+n.id+'\')">×</span></div></div><div style="font-weight:600;font-size:14px" id="note-title-'+n.id+'">'+n.title+'</div><div style="font-size:13px;color:var(--text2);white-space:pre-wrap" id="note-content-'+n.id+'">'+n.content+'</div></div>'}).join('');
+// History section
+var history=S.reviews.filter(function(r){return r.date!==td2}).sort(function(a,b){return b.date.localeCompare(a.date)}).slice(0,14);
+var histHTML=history.length?history.map(function(r){return'<div class="card" style="padding:12px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:700">'+h(r.date)+'</span><span style="font-size:20px">'+r.mood+'</span></div><div style="font-size:12px"><div style="margin-bottom:3px"><span style="color:var(--green2)">🌟</span> '+r.highlight+'</div><div style="margin-bottom:3px"><span style="color:var(--orange2)">💪</span> '+r.weakness+'</div><div style="margin-bottom:3px"><span style="color:var(--blue2)">🎯</span> '+r.tomorrow+'</div></div></div>'}).join(''):'<div style="text-align:center;color:var(--text2);padding:16px;font-size:13px">还没有历史记录，今天开始写吧 ✍️</div>';
 return`
 <div class="card"><h3>📝 每日复盘</h3><div style="font-size:13px;color:var(--text2);margin-bottom:8px">${h(td2)}</div>
 <div class="review-grid">
   <div class="rv-cell"><h4>🌟 今日高光</h4><textarea id="revHighlight" placeholder="今天做得好的...">${todayRev.highlight}</textarea></div>
   <div class="rv-cell"><h4>💪 今日不足</h4><textarea id="revWeakness" placeholder="可以改进的...">${todayRev.weakness}</textarea></div>
   <div class="rv-cell"><h4>🎯 明日计划</h4><textarea id="revTomorrow" placeholder="明天要做...">${todayRev.tomorrow}</textarea></div>
-  <div class="rv-cell"><h4>😊 今日心情</h4><div style="display:flex;gap:6px;flex-wrap:wrap;font-size:24px;margin-top:4px">${['😄','😊','😐','😢','😤','🥰','😴','🔥'].map(e=>`<span style="cursor:pointer;padding:4px;${todayRev.mood===e?'background:var(--pink);border-radius:8px':''}" onclick="setMood('${e}')">${e}</span>`).join('')}</div></div>
+  <div class="rv-cell"><h4>😊 今日心情</h4><div style="display:flex;gap:6px;flex-wrap:wrap;font-size:24px;margin-top:4px">${['😄','😊','😐','😢','😤','🥰','😴','🔥'].map(function(e){return'<span style="cursor:pointer;padding:4px;'+(todayRev.mood===e?'background:var(--pink);border-radius:8px':'')+'" onclick="setMood(\''+e+'\')">'+e+'</span>'}).join('')}</div></div>
 </div>
 <button class="btn btn-primary" style="width:100%;margin-top:12px" onclick="saveReview()">💾 保存复盘</button></div>
+<div class="card"><h3>📜 复盘历史 (${S.reviews.length}条)</h3>${histHTML}</div>
 <div class="card"><h3>💡 灵感笔记</h3><input id="noteTitle" placeholder="标题" style="margin-bottom:6px"><textarea id="noteContent" placeholder="内容..." style="margin-bottom:6px;min-height:60px" rows="2"></textarea>
 <div style="display:flex;gap:6px"><select id="noteType" style="width:auto"><option value="inspiration">灵感笔记</option><option value="meeting">会议纪要</option></select><button class="btn btn-primary btn-sm" onclick="addNote()">保存</button></div></div>
 <div style="margin-top:8px">${nHTML}</div>`;
