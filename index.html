@@ -405,7 +405,7 @@ window.startTomato=function(id){const t=S.tasks.find(t=>t.id===id);if(!t)return;
   const iv=setInterval(()=>{sec--;if(tomatoEl)tomatoEl.textContent='🍅'+Math.floor(sec/60)+':'+fmt(sec%60);if(sec<=0){clearInterval(iv);t.tomato=(t.tomato||0)+1;save();render();attachEvents();initKanban();alert('🍅 番茄钟完成！')}},1000)};
 
 // Finance
-window.addFinance=function(){const type=$('#finType')?.value||'expense';const amt=parseFloat($('#finAmt')?.value);const cat=$('#finCat')?.value||'其他';const note=$('#finNote')?.value||'';if(!amt||amt<=0)return alert('请输入金额');
+window.addFinance=function(){var elType=$('#finType');var elAmt=$('#finAmt');var elCat=$('#finCat');var elNote=$('#finNote');var type=(elType&&elType.value)||'expense';var amt=parseFloat(elAmt&&elAmt.value);var cat=(elCat&&elCat.value)||'其他';var note=(elNote&&elNote.value)||'';if(!amt||amt<=0)return alert('请输入金额');
   S.finances.push({id:Date.now(),type,amount:amt,cat,note,date:today()});save();render();attachEvents();drawPie()};
 window.exportCSV=function(){let csv='类型,金额,分类,备注,日期\n';S.finances.forEach(f=>{csv+=`${f.type==='income'?'收入':'支出'},${f.amount},${f.cat},${f.note},${f.date}\n`});
   const blob=new Blob(['﻿'+csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='账本_'+today()+'.csv';a.click()};
@@ -416,13 +416,13 @@ window.addQuiz=function(){const subj=prompt('科目：');if(!subj)return;const q
   S.quiz.push({id:Date.now(),subj,q,opts,ans,user:null});save();render();attachEvents()};
 
 // Vocab
-window.logVocab=function(){const cnt=parseInt($('#vocabCount')?.value)||0;if(cnt<=0)return;const td2=today();S.vocabLog[td2]=(S.vocabLog[td2]||0)+cnt;save();render();attachEvents();alert('✅ 已打卡 '+cnt+' 词！')};
+window.logVocab=function(){var el=$('#vocabCount');var cnt=parseInt(el&&el.value)||0;if(cnt<=0)return;var td2=today();S.vocabLog[td2]=(S.vocabLog[td2]||0)+cnt;save();render();attachEvents();alert('✅ 已打卡 '+cnt+' 词！')};
 
 // Review
-window.saveReview=function(){const td2=today();const rev={date:td2,highlight:$('#revHighlight')?.value||'',weakness:$('#revWeakness')?.value||'',tomorrow:$('#revTomorrow')?.value||'',mood:S.reviews.find(r=>r.date===td2)?.mood||'😊'};
+window.saveReview=function(){var td2=today();var elH=$('#revHighlight');var elW=$('#revWeakness');var elT=$('#revTomorrow');var oldRv=S.reviews.find(function(r){return r.date===td2});var rev={date:td2,highlight:(elH&&elH.value)||'',weakness:(elW&&elW.value)||'',tomorrow:(elT&&elT.value)||'',mood:(oldRv&&oldRv.mood)||'😊'};
   const idx=S.reviews.findIndex(r=>r.date===td2);if(idx>=0)S.reviews[idx]=rev;else S.reviews.unshift(rev);save();render();attachEvents();alert('✅ 复盘已保存')};
 window.setMood=function(e){const td2=today();let r=S.reviews.find(r=>r.date===td2);if(!r){r={date:td2,highlight:'',weakness:'',tomorrow:'',mood:e};S.reviews.unshift(r)}else r.mood=e;save();render();attachEvents()};
-window.addNote=function(){const title=$('#noteTitle')?.value;const content=$('#noteContent')?.value;const type=$('#noteType')?.value||'inspiration';if(!title||!content)return alert('请填写标题和内容');
+window.addNote=function(){var elT=$('#noteTitle');var elC=$('#noteContent');var elTp=$('#noteType');var title=elT&&elT.value;var content=elC&&elC.value;var type=(elTp&&elTp.value)||'inspiration';if(!title||!content)return alert('请填写标题和内容');
   S.notes.unshift({id:Date.now(),title,content,type,date:today()});save();render();attachEvents()};
 window.delNote=function(id){S.notes=S.notes.filter(n=>n.id!==id);save();render();attachEvents()};
 
