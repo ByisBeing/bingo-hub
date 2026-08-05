@@ -504,15 +504,37 @@ document.querySelectorAll('.check-row input[type=checkbox]').forEach(cb=>cb.onch
 
 } // <-- closes attachEvents
 
-// Calendar date selection
+// Calendar date selection with inline edit/delete/add
 window.selectDate=function(ds){
-  document.querySelectorAll('.cal-cell').forEach(c=>c.classList.remove('selected'));
-  const cell=document.querySelector('.cal-cell[data-date="'+ds+'"]');if(cell)cell.classList.add('selected');
-  const evs=S.events.filter(e=>e.date===ds);
-  const container=document.getElementById('selectedEvents');
-  if(container)container.innerHTML=evs.length?`<div class="card"><h3>${h(ds)} 日程</h3>${evs.map(e=>`<div style="padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.04)"><span class="tag tag-${e.type==='exam'?'exam':e.type==='hw'?'hw':e.type==='club'?'club':'life'}">${e.type==='exam'?'考试':e.type==='hw'?'作业':e.type==='club'?'学生会':'生活'}</span> <strong>${e.title}</strong><br><span style="font-size:12px;color:var(--text2)">${e.time} · ${e.loc}</span></div>`).join('')}</div>`:'<div style="text-align:center;color:var(--text2);padding:12px">这天没有安排~</div>';
+  var cells=document.querySelectorAll('.cal-cell');for(var i=0;i<cells.length;i++)cells[i].classList.remove('selected');
+  var cell=document.querySelector('.cal-cell[data-date="'+ds+'"]');if(cell)cell.classList.add('selected');
+  var evs=S.events.filter(function(e){return e.date===ds});
+  var container=document.getElementById('selectedEvents');if(!container)return;
+  var typeNames={exam:'考试',hw:'作业',club:'学生会',life:'生活'};
+  var evHTML=evs.map(function(e){return'<div class="event-row" id="ev-'+e.id+'" style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,0.04)"><div style="flex:1"><span class="tag tag-'+e.type+'">'+typeNames[e.type]+'</span> <strong>'+e.title+'</strong><br><span style="font-size:12px;color:var(--text2)">'+e.time+' · '+e.loc+'</span></div><div style="display:flex;gap:2px"><span style="cursor:pointer;font-size:13px;color:var(--blue2);padding:6px" onclick="editEvent('+e.id+')">✎</span><span style="cursor:pointer;font-size:14px;color:var(--gray2);padding:6px" onclick="delEvent('+e.id+')">×</span></div></div>'}).join('');
+  container.innerHTML='<div class="card"><h3 style="display:flex;justify-content:space-between;align-items:center">'+h(ds)+' 日程<span style="font-size:12px;font-weight:400;color:var(--text2);cursor:pointer" onclick="showEventForm(\''+ds+'\')">+ 添加</span></h3>'+evHTML+'<div id="eventForm-'+ds+'" style="display:none;margin-top:8px;background:rgba(255,255,255,0.7);border-radius:12px;padding:10px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><input id="evTitle-'+ds+'" placeholder="事件名称" style="font-size:13px"><input id="evTime-'+ds+'" type="time" value="09:00" style="font-size:13px"><input id="evLoc-'+ds+'" placeholder="地点" style="font-size:13px"><select id="evType-'+ds+'" style="font-size:13px"><option value="course">课程</option><option value="exam">考试</option><option value="hw">作业</option><option value="club">学生会</option><option value="life">生活</option></select></div><button class="btn btn-primary btn-sm" style="width:100%;margin-top:6px" onclick="addEvent(\''+ds+'\')">保存事件</button></div>'+(evs.length?'':'<div style="text-align:center;color:var(--text2);padding:8px 0;font-size:13px">这天没有安排~</div>')+'</div>';
 };
 window.changeMonth=function(delta){calOffset+=delta;render();attachEvents();document.getElementById('page-cal').classList.add('active');document.getElementById('page-home').classList.remove('active');document.querySelectorAll('.nav-item').forEach(function(x){x.classList.remove('active')});document.querySelectorAll('.nav-item')[1].classList.add('active')};
+
+// Event CRUD
+window.showEventForm=function(ds){var f=document.getElementById('eventForm-'+ds);if(f)f.style.display='block'};
+window.addEvent=function(ds){
+  var title=(document.getElementById('evTitle-'+ds)||{}).value;if(!title)return alert('请输入事件名称');
+  var time=(document.getElementById('evTime-'+ds)||{}).value||'09:00';
+  var loc=(document.getElementById('evLoc-'+ds)||{}).value||'';
+  var type=(document.getElementById('evType-'+ds)||{}).value||'course';
+  var ev={id:Date.now(),title:title,date:ds,time:time,type:type,loc:loc};S.events.push(ev);save();
+  // Refresh the day panel
+  selectDate(ds);
+  // Update calendar dot
+  var calCell=document.querySelector('.cal-cell[data-date="'+ds+'"]');if(calCell&&!calCell.querySelector('.cal-dot')){var dot=document.createElement('div');dot.className='cal-dot';calCell.style.position='relative';calCell.appendChild(dot)}
+};
+window.delEvent=function(id){if(!confirm('删除这个事件？'))return;S.events=S.events.filter(function(e){return e.id!==id});save();
+  var row=document.getElementById('ev-'+id);if(row){row.style.opacity='0';row.style.transition='.2s';setTimeout(function(){if(row.parentNode)row.parentNode.removeChild(row)},200)}
+};
+window.editEvent=function(id){var e=S.events.find(function(x){return x.id===id});if(!e)return;
+  var t=prompt('事件名称：',e.title);if(t===null)return;var tm=prompt('时间：',e.time);if(tm===null)return;var l=prompt('地点：',e.loc);if(l===null)return;
+  e.title=t;e.time=tm;e.loc=l;save();selectDate(e.date)};
 window.courseDetail=function(id){var c=S.courses.find(function(x){return x.id===id});if(c)showModal('<h3>'+c.name+'</h3><p>📍 '+c.loc+'</p><p>👨‍🏫 '+c.teacher+'</p><p>📅 第'+c.weeks+'周</p><p>⏰ 周'+c.day+' 第'+c.start+'-'+(c.start+c.dur-1)+'节</p><button class="btn btn-ghost btn-sm" style="color:#c06050;width:100%;margin-top:8px" onclick="delCourse('+c.id+');document.getElementById(\'modalContainer\').innerHTML=\'\'">🗑 删除此课程</button>')};
 
 // Task kanban
