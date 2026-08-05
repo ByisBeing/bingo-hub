@@ -9,9 +9,17 @@
 <meta name="theme-color" content="#f7f3ee">
 <link rel="manifest" href="data:application/json,{}">
 <title>我的大学全能管家</title>
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1"></script>
+<script>
+// CDN fallback - try bootcdn (China) first, then jsdelivr
+(function loadScript(src,cb){
+  var s=document.createElement('script');s.src=src;s.onload=cb;s.onerror=function(){
+    // fallback to jsdelivr
+    if(src.indexOf('bootcdn')>0){var s2=document.createElement('script');s2.src=src.replace(/https:\/\/cdn\.bootcdn\.net\/ajax\/libs\/[^\/]+\/[^\/]+\//,'https://cdn.jsdelivr.net/npm/').replace('canvas-confetti/','canvas-confetti@').replace('Chart.js/','chart.js@').replace('Sortable/','sortablejs@');document.head.appendChild(s2)}
+  };document.head.appendChild(s)
+})('https://cdn.bootcdn.net/ajax/libs/canvas-confetti/1.9.3/confetti.browser.min.js');
+loadScript('https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.0/chart.umd.min.js');
+loadScript('https://cdn.bootcdn.net/ajax/libs/Sortable/1.15.0/Sortable.min.js');
+</script>
 <style>
 :root{
   --bg:#f7f3ee;--blue:#d4eaf5;--blue2:#7bb8d4;--pink:#fce4ec;--pink2:#e8a0b4;
@@ -289,11 +297,13 @@ return`
 }
 
 // ─── TAB 4: STUDY ───
+var quizMode='all';
 function studyPage(){
-const subs=[{n:'Python',p:15,c:'var(--blue2)'},{n:'高等数学',p:10,c:'var(--pink2)'},{n:'CET-4',p:8,c:'var(--orange2)'},{n:'WPS二级',p:12,c:'var(--green2)'}];
-const exams=[{n:'计算机二级',d:'2026-09-20',c:'var(--orange2)'},{n:'CET-4',d:'2026-12-12',c:'var(--blue2)'},{n:'期末',d:'2027-01-10',c:'var(--pink2)'}];
-const td=today();
-const qHTML=S.quiz.map((q,i)=>`<div class="quiz-card"><div style="font-size:12px;color:var(--text2)">${q.subj} · 第${i+1}题</div><div style="font-weight:600;margin:6px 0">${q.q}</div>${q.opts.map((o,j)=>`<div class="quiz-opt${q.user!==null?(j===q.ans?' correct':j===q.user&&j!==q.ans?' wrong':''):''}" onclick="answerQuiz(${q.id},${j})">${'ABCD'[j]}. ${o}</div>`).join('')}${q.user!==null?(q.user===q.ans?'<div style="color:#4a9a6a;font-weight:600;margin-top:4px">✅ 正确！</div>':'<div style="color:#c06050;font-weight:600;margin-top:4px">❌ 正确答案是 '+String.fromCharCode(65+q.ans)+'</div>'):''}</div>`).join('');
+var subs=[{n:'Python',p:15,c:'var(--blue2)'},{n:'高等数学',p:10,c:'var(--pink2)'},{n:'CET-4',p:8,c:'var(--orange2)'},{n:'WPS二级',p:12,c:'var(--green2)'}];
+var exams=[{n:'计算机二级',d:'2026-09-20',c:'var(--orange2)'},{n:'CET-4',d:'2026-12-12',c:'var(--blue2)'},{n:'期末',d:'2027-01-10',c:'var(--pink2)'}];
+var td=today();
+var qlist=S.quiz;if(quizMode==='wrong')qlist=S.quiz.filter(function(q){return q.user!==null&&q.user!==q.ans});
+var qHTML=qlist.map(function(q,i){return'<div class="quiz-card"><div style="font-size:12px;color:var(--text2)">'+q.subj+' · 第'+(i+1)+'题</div><div style="font-weight:600;margin:6px 0">'+q.q+'</div>'+q.opts.map(function(o,j){return'<div class="quiz-opt'+(q.user!==null?(j===q.ans?' correct':j===q.user&&j!==q.ans?' wrong':''):'')+'" onclick="answerQuiz('+q.id+','+j+')">'+('ABCD'[j])+'. '+o+'</div>'}).join('')+(q.user!==null?(q.user===q.ans?'<div style="color:#4a9a6a;font-weight:600;margin-top:4px">✅ 正确！</div>':'<div style="color:#c06050;font-weight:600;margin-top:4px">❌ 正确答案是 '+String.fromCharCode(65+q.ans)+'</div>'):'')+'</div>'}).join('');
 
 // Vocab heatmap
 let vHTML='';const nowD=new Date();for(let i=29;i>=0;i--){const d=new Date(nowD);d.setDate(d.getDate()-i);const ds=d.getFullYear()+'-'+fmt(d.getMonth()+1)+'-'+fmt(d.getDate());const cnt=S.vocabLog[ds]||0;const alpha=cnt>0?Math.min(0.3+cnt*0.07,1):0.05;vHTML+=`<span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:var(--green2);opacity:${alpha};margin:1px" title="${ds}: ${cnt}词"></span>`}
@@ -301,7 +311,7 @@ let vHTML='';const nowD=new Date();for(let i=29;i>=0;i--){const d=new Date(nowD)
 return`
 <div class="card"><h3>📊 科目进度</h3>${subs.map(s=>`<div><div style="display:flex;justify-content:space-between;font-size:13px"><span>${s.n}</span><span>${s.p}%</span></div><div class="progress-bar"><div class="progress-fill" style="width:${s.p}%;background:${s.c}"></div></div></div>`).join('')}</div>
 <div class="card"><h3>⏰ 考试倒计时</h3>${exams.map(e=>{const d=daysBetween(td,e.d);return`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0"><span>${e.n}</span><span style="font-weight:700;font-size:18px;color:${e.c}">${d}天</span></div>`}).join('')}</div>
-<div class="card"><h3>📝 刷题</h3><div style="display:flex;gap:6px;margin-bottom:8px"><select id="quizFilter" onchange="render();attachEvents()" style="width:auto"><option value="all">全部</option><option value="wrong">错题集</option></select><button class="btn btn-ghost btn-sm" onclick="addQuiz()">+ 添加题目</button></div><div id="quizArea">${qHTML}</div></div>
+<div class="card"><h3>📝 刷题</h3><div style="display:flex;gap:6px;margin-bottom:8px"><select id="quizFilter" onchange="quizMode=this.value;render();attachEvents()" style="width:auto"><option value="all">全部</option><option value="wrong">错题集</option></select><button class="btn btn-ghost btn-sm" onclick="addQuiz()">+ 添加题目</button></div><div id="quizArea">${qHTML}</div></div>
 <div class="card"><h3>📖 单词打卡</h3><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><input id="vocabCount" type="number" value="50" style="width:70px;flex:0" placeholder="词数"><button class="btn btn-primary btn-sm" onclick="logVocab()">打卡</button></div><div style="overflow-x:auto;white-space:nowrap">${vHTML}</div></div>`;
 }
 
@@ -355,18 +365,12 @@ window.delTask=function(id){S.tasks=S.tasks.filter(t=>t.id!==id);save();render()
 window.startTomato=function(id){const t=S.tasks.find(t=>t.id===id);if(!t)return;
   let sec=25*60;const tomatoEl=document.querySelector('.kb-card[data-id="'+id+'"] .tomato');if(tomatoEl)tomatoEl.classList.add('active');
   const iv=setInterval(()=>{sec--;if(tomatoEl)tomatoEl.textContent='🍅'+Math.floor(sec/60)+':'+fmt(sec%60);if(sec<=0){clearInterval(iv);t.tomato=(t.tomato||0)+1;save();render();attachEvents();initKanban();alert('🍅 番茄钟完成！')}},1000)};
-window.initKanban=function(){document.querySelectorAll('.kb-list').forEach(el=>{new Sortable(el,{group:'tasks',animation:200,onEnd:function(evt){const id=parseInt(evt.item.dataset.id);const t=S.tasks.find(t=>t.id===id);if(t){t.cat=evt.to.dataset.cat;save();render();attachEvents();initKanban()}}})})};
 
 // Finance
 window.addFinance=function(){const type=$('#finType')?.value||'expense';const amt=parseFloat($('#finAmt')?.value);const cat=$('#finCat')?.value||'其他';const note=$('#finNote')?.value||'';if(!amt||amt<=0)return alert('请输入金额');
   S.finances.push({id:Date.now(),type,amount:amt,cat,note,date:today()});save();render();attachEvents();drawPie()};
 window.exportCSV=function(){let csv='类型,金额,分类,备注,日期\n';S.finances.forEach(f=>{csv+=`${f.type==='income'?'收入':'支出'},${f.amount},${f.cat},${f.note},${f.date}\n`});
   const blob=new Blob(['﻿'+csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='账本_'+today()+'.csv';a.click()};
-window.drawPie=function(){const canvas=$('#pieChart');if(!canvas)return;
-  const mf=S.finances.filter(f=>f.date.startsWith(now().getFullYear()+'-'+fmt(now().getMonth()+1))&&f.type==='expense');
-  const cat={};mf.forEach(f=>{cat[f.cat]=(cat[f.cat]||0)+f.amount});const labels=Object.keys(cat);const data=Object.values(cat);
-  if(window._pie)window._pie.destroy();
-  if(labels.length)window._pie=new Chart(canvas,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:['#e8a0b4','#f0b57c','#8cc9a8','#7bb8d4','#f0d58c','#c5bfb6']}]},options:{plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:10}}}}})};
 
 // Quiz
 window.answerQuiz=function(id,idx){const q=S.quiz.find(q=>q.id===id);if(!q||q.user!==null)return;q.user=idx;save();render();attachEvents()};
@@ -397,9 +401,35 @@ function globalActions(){return`
   <button class="btn btn-ghost btn-sm" onclick="importJSON()">📥 导入JSON</button>
 </div>`}
 
+// ═══════════════ CDN-DEPENDENT (safe fallback) ═══════════════
+window.initKanban=function(){
+  if(typeof Sortable==='undefined')return;
+  document.querySelectorAll('.kb-list').forEach(el=>{
+    try{new Sortable(el,{group:'tasks',animation:200,onEnd:function(evt){
+      var id=parseInt(evt.item.dataset.id);var t=S.tasks.find(function(t){return t.id===id});
+      if(t){t.cat=evt.to.dataset.cat;save();render();attachEvents();initKanban()}
+    }})}catch(e){}
+  })
+};
+
+window.drawPie=function(){
+  if(typeof Chart==='undefined')return;
+  var canvas=$('#pieChart');if(!canvas)return;
+  var mf=S.finances.filter(function(f){return f.date.startsWith(now().getFullYear()+'-'+fmt(now().getMonth()+1))&&f.type==='expense'});
+  var cat={};mf.forEach(function(f){cat[f.cat]=(cat[f.cat]||0)+f.amount});
+  var labels=Object.keys(cat);var data=Object.values(cat);
+  if(window._pie)window._pie.destroy();
+  if(labels.length)window._pie=new Chart(canvas,{type:'doughnut',data:{labels:labels,datasets:[{data:data,backgroundColor:['#e8a0b4','#f0b57c','#8cc9a8','#7bb8d4','#f0d58c','#c5bfb6']}]},options:{plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:10}}}}})
+};
+
 // ═══════════════ BOOT ═══════════════
-render();document.getElementById('page-home').insertAdjacentHTML('beforeend',globalActions());
-setTimeout(()=>{drawPie();initKanban()},300);
+try{
+  render();
+  document.getElementById('page-home').insertAdjacentHTML('beforeend',globalActions());
+  setTimeout(function(){drawPie();initKanban()},600);
+}catch(e){
+  document.getElementById('app').innerHTML='<div style="padding:40px;text-align:center"><h2>😵 加载出错</h2><p>请刷新页面重试</p><pre style="font-size:10px;color:#999">'+e.message+'</pre></div>';
+}
 
 // Auto-save on beforeunload
 window.addEventListener('beforeunload',save);
