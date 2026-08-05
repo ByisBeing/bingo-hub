@@ -515,7 +515,7 @@ window.togglePomo=function(){
 window.resetPomo=function(){pomoRunning=false;if(pomoTimer)clearInterval(pomoTimer);pomoSec=0;pomoTotal=0;render();attachEvents()};
 
 // Vocab
-window.logVocab=function(){var el=$('#vocabCount');var cnt=parseInt(el&&el.value)||0;if(cnt<=0)return;var td2=today();S.vocabLog[td2]=(S.vocabLog[td2]||0)+cnt;save();render();attachEvents();alert('✅ 已打卡 '+cnt+' 词！')};
+window.logVocab=function(){var el=$('#vocabCount');var cnt=parseInt(el&&el.value)||0;if(cnt<=0)return;var td2=today();S.vocabLog[td2]=(S.vocabLog[td2]||0)+cnt;save();render();attachEvents();confetti({particleCount:80,spread:60,origin:{y:0.5},colors:['#8cc9a8','#a0d8b0','#d4ece0','#f0d58c']});alert('✅ 已打卡 '+cnt+' 词！')};
 
 // Review
 window.saveReview=function(){var td2=today();var elH=$('#revHighlight');var elW=$('#revWeakness');var elT=$('#revTomorrow');var oldRv=S.reviews.find(function(r){return r.date===td2});var rev={date:td2,highlight:(elH&&elH.value)||'',weakness:(elW&&elW.value)||'',tomorrow:(elT&&elT.value)||'',mood:(oldRv&&oldRv.mood)||'😊'};
