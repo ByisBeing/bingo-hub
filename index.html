@@ -398,6 +398,8 @@ document.querySelectorAll('.check-row input[type=checkbox]').forEach(cb=>cb.onch
   setTimeout(()=>{render();attachEvents()},400);
 });
 
+} // <-- closes attachEvents
+
 // Calendar date selection
 window.selectDate=function(ds){
   document.querySelectorAll('.cal-cell').forEach(c=>c.classList.remove('selected'));
