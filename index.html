@@ -261,9 +261,10 @@ return`
   `).join('')}
 </div>
 <div class="card">
-  <h3>⏳ 倒计时</h3>
+  <h3>⏳ 倒计时 <span style="font-size:12px;font-weight:400;color:var(--text2);cursor:pointer" onclick="addCountdown()">+ 添加</span></h3>
   <div class="countdown-row">${ct.map(c=>`
-    <div class="cd-card" style="background:${cdColor(c)}15">
+    <div class="cd-card" style="background:${cdColor(c)}15;position:relative">
+      <span style="position:absolute;top:4px;right:8px;font-size:14px;color:var(--gray2);cursor:pointer" onclick="event.stopPropagation();delCountdown(${c.id})">×</span>
       <div class="cd-num" style="color:${cdColor(c)}">${c.days}</div>
       <div style="font-size:13px;font-weight:600">${c.title}</div>
       <div class="cd-label">天后</div>
@@ -273,7 +274,8 @@ return`
 }
 
 // ─── TAB 2: CALENDAR ───
-function calPage(){const td=today();const [y,m]=[now().getFullYear(),now().getMonth()];
+var calOffset=0; // months from current
+function calPage(){var td=today();var d=new Date(now().getFullYear(),now().getMonth()+calOffset,1);var y=d.getFullYear();var m=d.getMonth();
 const firstDay=new Date(y,m,1).getDay();const daysInMonth=new Date(y,m+1,0).getDate();
 const days=[];for(let i=0;i<firstDay;i++)days.push(null);for(let i=1;i<=daysInMonth;i++)days.push(i);
 const eventDays={};S.events.forEach(e=>{const d=e.date.split('-')[2];if(e.date.startsWith(y+'-'+fmt(m+1)))eventDays[parseInt(d)]=true});
@@ -320,8 +322,8 @@ const mf=S.finances.filter(f=>f.date.startsWith(thisMonth));
 const totalIn=mf.filter(f=>f.type==='income').reduce((a,b)=>a+b.amount,0);
 const totalOut=mf.filter(f=>f.type==='expense').reduce((a,b)=>a+b.amount,0);
 const catOut={};mf.filter(f=>f.type==='expense').forEach(f=>{catOut[f.cat]=(catOut[f.cat]||0)+f.amount});
-const finList=mf.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8).map(f=>`
-<div class="fin-item"><div><div style="font-size:13px;font-weight:500">${f.note||f.cat}</div><div style="font-size:11px;color:var(--text2)">${f.date} · ${f.cat}</div></div><div class="fin-amt ${f.type==='income'?'fin-in':'fin-out'}">${f.type==='income'?'+':'-'}¥${f.amount}</div></div>
+const finList=mf.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10).map(f=>`
+<div class="fin-item"><div style="flex:1"><div style="font-size:13px;font-weight:500">${f.note||f.cat}</div><div style="font-size:11px;color:var(--text2)">${f.date} · ${f.cat}</div></div><div class="fin-amt ${f.type==='income'?'fin-in':'fin-out'}">${f.type==='income'?'+':'-'}¥${f.amount}</div><span style="font-size:14px;color:var(--gray2);cursor:pointer;padding:4px" onclick="delFinance(${f.id})">×</span></div>
 `).join('');
 
 return`
@@ -383,6 +385,13 @@ return`
 <div style="margin-top:8px">${nHTML}</div>`;
 }
 
+// Countdown management
+window.addCountdown=function(){var t=prompt('倒计时名称（如：CET-4考试）：');if(!t)return;var d=prompt('日期（如：2026-12-12）：');if(!d)return;S.countdowns.push({id:Date.now(),title:t,date:d,color:'var(--pink2)'});save();render();attachEvents()};
+window.delCountdown=function(id){if(!confirm('删除这个倒计时？'))return;S.countdowns=S.countdowns.filter(function(c){return c.id!==id});save();render();attachEvents()};
+
+// Finance delete
+window.delFinance=function(id){if(!confirm('删除这条记录？'))return;S.finances=S.finances.filter(function(f){return f.id!==id});save();render();attachEvents();drawPie()};
+
 // ═══════════════ ACTIONS ═══════════════
 function attachEvents(){
 document.querySelectorAll('.nav-item').forEach(b=>b.onclick=function(){
@@ -408,7 +417,7 @@ window.selectDate=function(ds){
   const container=document.getElementById('selectedEvents');
   if(container)container.innerHTML=evs.length?`<div class="card"><h3>${h(ds)} 日程</h3>${evs.map(e=>`<div style="padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.04)"><span class="tag tag-${e.type==='exam'?'exam':e.type==='hw'?'hw':e.type==='club'?'club':'life'}">${e.type==='exam'?'考试':e.type==='hw'?'作业':e.type==='club'?'学生会':'生活'}</span> <strong>${e.title}</strong><br><span style="font-size:12px;color:var(--text2)">${e.time} · ${e.loc}</span></div>`).join('')}</div>`:'<div style="text-align:center;color:var(--text2);padding:12px">这天没有安排~</div>';
 };
-window.changeMonth=function(delta){/* simplified */alert('月切换：demo展示2026年8月')};
+window.changeMonth=function(delta){calOffset+=delta;render();attachEvents();document.getElementById('page-cal').classList.add('active');document.getElementById('page-home').classList.remove('active');document.querySelectorAll('.nav-item').forEach(function(x){x.classList.remove('active')});document.querySelectorAll('.nav-item')[1].classList.add('active')};
 window.courseDetail=function(id){const c=S.courses.find(x=>x.id===id);if(c)showModal(`<h3>${c.name}</h3><p>📍 ${c.loc}</p><p>👨‍🏫 ${c.teacher}</p><p>📅 第${c.weeks}周</p><p>⏰ 周${c.day} 第${c.start}-${c.start+c.dur-1}节</p>`)};
 
 // Task kanban
