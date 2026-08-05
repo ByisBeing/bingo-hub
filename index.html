@@ -137,6 +137,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--pink2);box-shadow:0 0
 .kb-card:active{cursor:grabbing}.kb-card .del{color:var(--gray2);cursor:pointer;font-size:14px;padding:4px}
 .tomato{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;border-radius:10px;background:var(--pink);cursor:pointer;font-weight:600}
 .tomato.active{background:var(--pink2);color:#fff;animation:pulse 1s infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+.pomo-live{animation:pomo-glow 2s ease-in-out infinite}@keyframes pomo-glow{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
 .fin-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.04)}
 .fin-amt{font-weight:700}.fin-in{color:#4a9a6a}.fin-out{color:#c06050}
 .summary-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
@@ -499,26 +500,32 @@ window.addQuiz=function(){const subj=prompt('科目：');if(!subj)return;const q
 window.adjProgress=function(idx,delta){if(!S.subjects||!S.subjects[idx])return;S.subjects[idx].p=Math.max(0,Math.min(100,S.subjects[idx].p+delta));save();render();attachEvents()};
 window.addSubject=function(){var el=$('#newSubj');var name=el&&el.value;if(!name)return alert('请输入科目名');S.subjects=S.subjects||[];S.subjects.push({n:name,p:0});save();render();attachEvents()};
 
-// Pomodoro timer (direct DOM update, no re-render)
-window.setPomo=function(min){pomoTotal=min*60;pomoSec=pomoTotal;pomoRunning=false;if(pomoTimer)clearInterval(pomoTimer);pomoTimer=null;updatePomoDisplay()};
+// Pomodoro timer (requestAnimationFrame for 60fps smoothness)
+window.setPomo=function(min){pomoTotal=min*60;pomoSec=pomoTotal;pomoRunning=false;if(pomoTimer)cancelAnimationFrame(pomoTimer);pomoTimer=null;updatePomoDisplay()};
 window.togglePomo=function(){
   if(!pomoTotal){var custom=$('#customPomo');var cmin=parseInt(custom&&custom.value)||25;pomoTotal=cmin*60;pomoSec=pomoTotal}
-  if(pomoRunning){pomoRunning=false;if(pomoTimer)clearInterval(pomoTimer);pomoTimer=null;updatePomoDisplay();return}
-  pomoRunning=true;updatePomoDisplay();
-  pomoTimer=setInterval(function(){
-    pomoSec--;updatePomoDisplay();
-    if(pomoSec<=0){pomoRunning=false;clearInterval(pomoTimer);pomoTimer=null;updatePomoDisplay();
+  if(pomoRunning){pomoRunning=false;if(pomoTimer)cancelAnimationFrame(pomoTimer);pomoTimer=null;updatePomoDisplay();return}
+  pomoRunning=true;
+  var lastTick=performance.now();
+  function tick(now){
+    if(!pomoRunning)return;
+    if(now-lastTick>=1000){pomoSec--;lastTick=now;updatePomoDisplay()}
+    if(pomoSec<=0){pomoRunning=false;updatePomoDisplay();
       if(typeof navigator!=='undefined'&&navigator.vibrate)navigator.vibrate([200,100,200]);
-      setTimeout(function(){alert('🍅 番茄钟完成！休息一下吧~')},100)}
-  },1000)
+      setTimeout(function(){alert('🍅 番茄钟完成！休息一下吧~')},100);return}
+    pomoTimer=requestAnimationFrame(tick)
+  }
+  updatePomoDisplay();pomoTimer=requestAnimationFrame(tick)
 };
-window.resetPomo=function(){pomoRunning=false;if(pomoTimer)clearInterval(pomoTimer);pomoTimer=null;pomoSec=0;pomoTotal=0;updatePomoDisplay()};
+window.resetPomo=function(){pomoRunning=false;if(pomoTimer)cancelAnimationFrame(pomoTimer);pomoTimer=null;pomoSec=0;pomoTotal=0;updatePomoDisplay()};
 
 function updatePomoDisplay(){
   var el=document.getElementById('pomoTime');if(!el)return;
   var sec=pomoSec||pomoTotal||0;
-  el.textContent=fmt(Math.floor(sec/60))+':'+fmt(sec%60);
+  var m=Math.floor(sec/60),s=sec%60;
+  el.textContent=fmt(m)+':'+fmt(s);
   el.style.color=pomoRunning?'var(--pink2)':'var(--gray2)';
+  if(pomoRunning){el.classList.add('pomo-live')}else{el.classList.remove('pomo-live')}
   var btn=document.getElementById('pomoBtn');if(btn)btn.textContent=pomoRunning?'⏸ 暂停':'▶ 开始';
   var tip=document.getElementById('pomoDone');if(tip)tip.style.display=pomoRunning?'block':'none';
 }
