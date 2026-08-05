@@ -360,7 +360,7 @@ const totalIn=mf.filter(f=>f.type==='income').reduce((a,b)=>a+b.amount,0);
 const totalOut=mf.filter(f=>f.type==='expense').reduce((a,b)=>a+b.amount,0);
 const catOut={};mf.filter(f=>f.type==='expense').forEach(f=>{catOut[f.cat]=(catOut[f.cat]||0)+f.amount});
 const finList=mf.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10).map(f=>`
-<div class="fin-item"><div style="flex:1"><div style="font-size:13px;font-weight:500">${f.note||f.cat}</div><div style="font-size:11px;color:var(--text2)">${f.date} · ${f.cat}</div></div><div class="fin-amt ${f.type==='income'?'fin-in':'fin-out'}">${f.type==='income'?'+':'-'}¥${f.amount}</div><span style="font-size:14px;color:var(--gray2);cursor:pointer;padding:4px" onclick="delFinance(${f.id})">×</span></div>
+<div class="fin-item" id="fin-${f.id}"><div style="flex:1"><div style="font-size:13px;font-weight:500">${f.note||f.cat}</div><div style="font-size:11px;color:var(--text2)">${f.date} · ${f.cat}</div></div><div class="fin-amt ${f.type==='income'?'fin-in':'fin-out'}">${f.type==='income'?'+':'-'}¥${f.amount}</div><span style="font-size:14px;color:var(--gray2);cursor:pointer;padding:4px" onclick="delFinance(${f.id})">×</span></div>
 `).join('');
 
 return`
@@ -394,7 +394,7 @@ function studyPage(){
 if(!S.subjects||!S.subjects.length)S.subjects=[{n:'Python',p:15},{n:'高等数学',p:10},{n:'CET-4',p:8},{n:'WPS二级',p:12}];
 var subColors=['var(--blue2)','var(--pink2)','var(--orange2)','var(--green2)'];
 var subsHTML=S.subjects.map(function(s,i){
-  return '<div style="margin-bottom:8px"><div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;gap:8px"><span style="flex:1">'+s.n+'</span><button class="btn btn-ghost btn-sm" style="min-width:28px;min-height:28px;padding:0;font-size:14px" onclick="adjProgress('+i+',-5)">−</button><span style="font-weight:700;min-width:32px;text-align:center">'+s.p+'%</span><button class="btn btn-ghost btn-sm" style="min-width:28px;min-height:28px;padding:0;font-size:14px" onclick="adjProgress('+i+',5)">+</button></div><div class="progress-bar"><div class="progress-fill" style="width:'+s.p+'%;background:'+(subColors[i%4])+'"></div></div></div>'
+  return '<div style="margin-bottom:8px"><div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;gap:8px"><span style="flex:1">'+s.n+'</span><button class="btn btn-ghost btn-sm" style="min-width:28px;min-height:28px;padding:0;font-size:14px" onclick="adjProgress('+i+',-5)">−</button><span style="font-weight:700;min-width:32px;text-align:center" id="prog-txt-'+i+'">'+s.p+'%</span><button class="btn btn-ghost btn-sm" style="min-width:28px;min-height:28px;padding:0;font-size:14px" onclick="adjProgress('+i+',5)">+</button></div><div class="progress-bar"><div class="progress-fill" id="prog-'+i+'" style="width:'+s.p+'%;background:'+(subColors[i%4])+'"></div></div></div>'
 }).join('');
 subsHTML+='<div style="display:flex;gap:6px;margin-top:8px"><input id="newSubj" placeholder="新科目名" style="font-size:12px;flex:1"><button class="btn btn-ghost btn-sm" onclick="addSubject()">+ 添加科目</button></div>';
 
@@ -461,10 +461,10 @@ return`
 
 // Countdown management
 window.addCountdown=function(){var t=prompt('倒计时名称（如：CET-4考试）：');if(!t)return;var d=prompt('日期（如：2026-12-12）：');if(!d)return;S.countdowns.push({id:Date.now(),title:t,date:d,color:'var(--pink2)'});save();render();attachEvents()};
-window.delCountdown=function(id){if(!confirm('删除这个倒计时？'))return;S.countdowns=S.countdowns.filter(function(c){return c.id!==id});save();render();attachEvents()};
+window.delCountdown=function(id){if(!confirm('删除这个倒计时？'))return;S.countdowns=S.countdowns.filter(function(c){return c.id!==id});save();var card=document.querySelector('.cd-card[onclick*="'+id+'"]');if(!card)card=document.querySelector('.cd-card span[onclick*="'+id+'"]');if(card){card.style.opacity='0';card.style.transform='scale(0.8)';card.style.transition='.2s';setTimeout(function(){if(card.parentNode)card.parentNode.removeChild(card)},200)}};
 
 // Finance delete
-window.delFinance=function(id){if(!confirm('删除这条记录？'))return;S.finances=S.finances.filter(function(f){return f.id!==id});save();render();attachEvents();drawPie()};
+window.delFinance=function(id){if(!confirm('删除这条记录？'))return;S.finances=S.finances.filter(function(f){return f.id!==id});save();var el=document.getElementById('fin-'+id);if(el){el.style.opacity='0';el.style.transform='translateX(20px)';el.style.transition='.2s';setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);drawPie()},200)}};
 
 // Course management
 window.toggleCourseForm=function(){var f=document.getElementById('courseForm');if(f)f.style.display=f.style.display==='none'?'block':'none'};
@@ -480,7 +480,7 @@ window.addCourse=function(){
   S.courses.push({id:Date.now(),name:name,day:day,start:start,dur:dur,loc:loc,teacher:teacher,weeks:'1-18'});
   save();render();attachEvents();alert('✅ 课程已添加！');
 };
-window.delCourse=function(id){if(!confirm('删除这门课？'))return;S.courses=S.courses.filter(function(c){return c.id!==id});save();render();attachEvents()};
+window.delCourse=function(id){if(!confirm('删除这门课？'))return;S.courses=S.courses.filter(function(c){return c.id!==id});save();render();attachEvents();document.getElementById('page-cal').classList.add('active')};
 
 // ═══════════════ ACTIONS ═══════════════
 function attachEvents(){
@@ -529,7 +529,9 @@ window.addQuiz=function(){const subj=prompt('科目：');if(!subj)return;const q
   S.quiz.push({id:Date.now(),subj,q,opts,ans,user:null});save();render();attachEvents()};
 
 // Subject progress
-window.adjProgress=function(idx,delta){if(!S.subjects||!S.subjects[idx])return;S.subjects[idx].p=Math.max(0,Math.min(100,S.subjects[idx].p+delta));save();render();attachEvents()};
+window.adjProgress=function(idx,delta){if(!S.subjects||!S.subjects[idx])return;S.subjects[idx].p=Math.max(0,Math.min(100,S.subjects[idx].p+delta));save();
+  var bar=document.getElementById('prog-'+idx);if(bar)bar.style.width=S.subjects[idx].p+'%';
+  var txt=document.getElementById('prog-txt-'+idx);if(txt)txt.textContent=S.subjects[idx].p+'%';};
 window.addSubject=function(){var el=$('#newSubj');var name=el&&el.value;if(!name)return alert('请输入科目名');S.subjects=S.subjects||[];S.subjects.push({n:name,p:0});save();render();attachEvents()};
 
 // Pomodoro timer (requestAnimationFrame for 60fps smoothness)
