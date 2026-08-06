@@ -279,10 +279,10 @@ return`
 <div class="card">
   <h3>✅ 今日核心任务</h3>
   ${S.tasks.filter(t=>!t.done).slice(0,5).map(t=>`
-    <div class="check-row"><input type="checkbox" id="t${t.id}" ${t.done?'checked':''} data-tid="${t.id}"><label class="check-box" for="t${t.id}">✓</label><span class="check-label">${['🔴','🟡','🟢'][t.id%3]} ${t.title}</span></div>
+    <div class="check-row" id="task-${t.id}"><input type="checkbox" id="t${t.id}" ${t.done?'checked':''} data-tid="${t.id}"><label class="check-box" for="t${t.id}">✓</label><span class="check-label" id="task-label-${t.id}">${['🔴','🟡','🟢'][t.id%3]} ${t.title}</span><span style="font-size:13px;color:var(--blue2);cursor:pointer;padding:4px" onclick="editTask(${t.id})">✎</span></div>
   `).join('')}
   ${S.tasks.filter(t=>t.done).slice(0,3).map(t=>`
-    <div class="check-row"><input type="checkbox" id="t${t.id}" checked data-tid="${t.id}"><label class="check-box" for="t${t.id}">✓</label><span class="check-label" style="text-decoration:line-through;color:var(--gray2)">✅ ${t.title}</span></div>
+    <div class="check-row" id="task-${t.id}"><input type="checkbox" id="t${t.id}" checked data-tid="${t.id}"><label class="check-box" for="t${t.id}">✓</label><span class="check-label" id="task-label-${t.id}" style="text-decoration:line-through;color:var(--gray2)">✅ ${t.title}</span><span style="font-size:13px;color:var(--blue2);cursor:pointer;padding:4px" onclick="editTask(${t.id})">✎</span></div>
   `).join('')}
 </div>
 <div class="card">
@@ -630,6 +630,7 @@ function updatePomoDisplay(){
 window.logVocab=function(){var el=$('#vocabCount');var cnt=parseInt(el&&el.value)||0;if(cnt<=0)return;var td2=today();S.vocabLog[td2]=(S.vocabLog[td2]||0)+cnt;save();confetti({particleCount:80,spread:60,origin:{y:0.5},colors:['#8cc9a8','#a0d8b0','#d4ece0','#f0d58c']});alert('✅ 已打卡 '+cnt+' 词！')};
 
 // Review
+window.editTask=function(id){var t=S.tasks.find(function(x){return x.id===id});if(!t)return;var nt=prompt('编辑任务：',t.title);if(nt===null||!nt.trim())return;t.title=nt.trim();save();var label=document.getElementById('task-label-'+id);if(label){var icon=label.textContent.charAt(0);label.textContent=icon+' '+nt};var kb=document.querySelector('.kb-card[data-id="'+id+'"] span:first-child');if(kb)kb.textContent=nt};
 window.saveReview=function(){var td2=today();var elH=$('#revHighlight');var elW=$('#revWeakness');var elT=$('#revTomorrow');var oldRv=S.reviews.find(function(r){return r.date===td2});var rev={date:td2,highlight:(elH&&elH.value)||'',weakness:(elW&&elW.value)||'',tomorrow:(elT&&elT.value)||'',mood:(oldRv&&oldRv.mood)||'😊'};
   var idx=S.reviews.findIndex(function(r){return r.date===td2});if(idx>=0)S.reviews[idx]=rev;else S.reviews.unshift(rev);save();alert('✅ 复盘已保存')};
 window.setMood=function(e){var td2=today();var r=S.reviews.find(function(r){return r.date===td2});if(!r){r={date:td2,highlight:'',weakness:'',tomorrow:'',mood:e};S.reviews.unshift(r)}else r.mood=e;save();
