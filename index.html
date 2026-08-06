@@ -279,10 +279,10 @@ return`
 <div class="card">
   <h3>✅ 今日核心任务</h3>
   ${S.tasks.filter(t=>!t.done).slice(0,5).map(t=>`
-    <div class="check-row" id="task-${t.id}"><input type="checkbox" id="t${t.id}" ${t.done?'checked':''} data-tid="${t.id}"><label class="check-box" for="t${t.id}">✓</label><span class="check-label" id="task-label-${t.id}">${['🔴','🟡','🟢'][t.id%3]} ${t.title}</span><span style="font-size:13px;color:var(--blue2);cursor:pointer;padding:4px" onclick="editTask(${t.id})">✎</span></div>
+    <div class="check-row" id="task-${t.id}"><input type="checkbox" id="t${t.id}" ${t.done?'checked':''} data-tid="${t.id}"><label class="check-box" for="t${t.id}">✓</label><span class="check-label" id="task-label-${t.id}">${['🔴','🟡','🟢'][(t.priority||1)-1]||'🔴'} ${t.title}</span><span style="font-size:13px;color:var(--blue2);cursor:pointer;padding:4px" onclick="editTask(${t.id})">✎</span></div>
   `).join('')}
   ${S.tasks.filter(t=>t.done).slice(0,3).map(t=>`
-    <div class="check-row" id="task-${t.id}"><input type="checkbox" id="t${t.id}" checked data-tid="${t.id}"><label class="check-box" for="t${t.id}">✓</label><span class="check-label" id="task-label-${t.id}" style="text-decoration:line-through;color:var(--gray2)">✅ ${t.title}</span><span style="font-size:13px;color:var(--blue2);cursor:pointer;padding:4px" onclick="editTask(${t.id})">✎</span></div>
+    <div class="check-row" id="task-${t.id}"><input type="checkbox" id="t${t.id}" checked data-tid="${t.id}"><label class="check-box" for="t${t.id}">✓</label><span class="check-label" id="task-label-${t.id}" style="text-decoration:line-through;color:var(--gray2)">${['🔴','🟡','🟢'][(t.priority||1)-1]||'🔴'} ${t.title}</span><span style="font-size:13px;color:var(--blue2);cursor:pointer;padding:4px" onclick="editTask(${t.id})">✎</span></div>
   `).join('')}
 </div>
 <div class="card">
@@ -352,7 +352,7 @@ return calHTML+ttHTML;}
 function taskPage(){
 const cats=[{k:'course',n:'📚 课程',bg:'var(--blue)'},{k:'club',n:'🎓 学生会',bg:'var(--green)'},{k:'personal',n:'👤 个人',bg:'var(--yellow)'},{k:'life',n:'🏠 生活',bg:'var(--gray)'}];
 const kanban=cats.map(c=>`<div class="kb-col" style="background:${c.bg}40"><div class="kb-title">${c.n}</div><div class="kb-list" data-cat="${c.k}">${S.tasks.filter(t=>t.cat===c.k).map(t=>`
-<div class="kb-card" data-id="${t.id}"><span>${t.title}</span><span class="tomato${t.tomato>0?' active':''}" onclick="event.stopPropagation();startTomato(${t.id})">🍅${t.tomato||''}</span><span class="del" onclick="event.stopPropagation();delTask(${t.id})">×</span></div>
+<div class="kb-card" data-id="${t.id}"><span>${['🔴','🟡','🟢'][(t.priority||1)-1]||'🔴'} ${t.title}</span><span class="tomato${t.tomato>0?' active':''}" onclick="event.stopPropagation();startTomato(${t.id})">🍅${t.tomato||''}</span><span class="del" onclick="event.stopPropagation();delTask(${t.id})">×</span></div>
 `).join('')}</div><button class="btn btn-ghost btn-sm" style="width:100%;margin-top:6px" onclick="addTask('${c.k}')">+ 添加</button></div>`).join('');
 
 // Finances
@@ -544,10 +544,10 @@ window.editEvent=function(id){var e=S.events.find(function(x){return x.id===id})
 window.courseDetail=function(id){var c=S.courses.find(function(x){return x.id===id});if(c)showModal('<h3>'+c.name+'</h3><p>📍 '+c.loc+'</p><p>👨‍🏫 '+c.teacher+'</p><p>📅 第'+c.weeks+'周</p><p>⏰ 周'+c.day+' 第'+c.start+'-'+(c.start+c.dur-1)+'节</p><button class="btn btn-ghost btn-sm" style="color:#c06050;width:100%;margin-top:8px" onclick="delCourse('+c.id+');document.getElementById(\'modalContainer\').innerHTML=\'\'">🗑 删除此课程</button>')};
 
 // Task kanban
-window.addTask=function(cat){var t=prompt('任务名称：');if(!t)return;var task={id:Date.now(),title:t,cat:cat,done:false,tomato:0};S.tasks.push(task);save();
+window.addTask=function(cat){var t=prompt('任务名称：');if(!t)return;var pri=parseInt(prompt('优先级 (1=🔴紧急 2=🟡重要 3=🟢一般)：','1'))||1;var task={id:Date.now(),title:t,cat:cat,done:false,tomato:0,priority:pri};S.tasks.push(task);save();
   var col=document.querySelector('.kb-list[data-cat="'+cat+'"]');if(!col)return;
   var card=document.createElement('div');card.className='kb-card';card.setAttribute('data-id',task.id);card.style.animation='cardIn .3s ease-out';
-  card.innerHTML='<span>'+t+'</span><span class="tomato" onclick="event.stopPropagation();startTomato('+task.id+')">🍅</span><span class="del" onclick="event.stopPropagation();delTask('+task.id+')">×</span>';
+  var icons=['🔴','🟡','🟢'];card.innerHTML='<span>'+((icons[pri-1]||'🔴')+' '+t)+'</span><span class="tomato" onclick="event.stopPropagation();startTomato('+task.id+')">🍅</span><span class="del" onclick="event.stopPropagation();delTask('+task.id+')">×</span>';
   col.insertBefore(card,col.querySelector('button')||null);initKanban()};
 window.delTask=function(id){S.tasks=S.tasks.filter(function(t){return t.id!==id});save();var card=document.querySelector('.kb-card[data-id="'+id+'"]');if(card){card.style.opacity='0';card.style.transform='scale(0.9)';card.style.transition='.2s';setTimeout(function(){if(card.parentNode)card.parentNode.removeChild(card)},200)}};
 window.startTomato=function(id){var t=S.tasks.find(function(t){return t.id===id});if(!t)return;
@@ -630,7 +630,11 @@ function updatePomoDisplay(){
 window.logVocab=function(){var el=$('#vocabCount');var cnt=parseInt(el&&el.value)||0;if(cnt<=0)return;var td2=today();S.vocabLog[td2]=(S.vocabLog[td2]||0)+cnt;save();confetti({particleCount:80,spread:60,origin:{y:0.5},colors:['#8cc9a8','#a0d8b0','#d4ece0','#f0d58c']});alert('✅ 已打卡 '+cnt+' 词！')};
 
 // Review
-window.editTask=function(id){var t=S.tasks.find(function(x){return x.id===id});if(!t)return;var nt=prompt('编辑任务：',t.title);if(nt===null||!nt.trim())return;t.title=nt.trim();save();var label=document.getElementById('task-label-'+id);if(label){var icon=label.textContent.charAt(0);label.textContent=icon+' '+nt};var kb=document.querySelector('.kb-card[data-id="'+id+'"] span:first-child');if(kb)kb.textContent=nt};
+window.editTask=function(id){var t=S.tasks.find(function(x){return x.id===id});if(!t)return;var nt=prompt('编辑任务：',t.title);if(nt===null||!nt.trim())return;t.title=nt.trim();
+  var pri=prompt('优先级 (1=🔴紧急 2=🟡重要 3=🟢一般)：',t.priority||1);if(pri!==null){t.priority=parseInt(pri)||1}
+  save();var icons=['🔴','🟡','🟢'];var icon=icons[(t.priority||1)-1]||icons[0];
+  var label=document.getElementById('task-label-'+id);if(label)label.textContent=icon+' '+nt;
+  var kb=document.querySelector('.kb-card[data-id="'+id+'"] span:first-child');if(kb)kb.textContent=nt};
 window.saveReview=function(){var td2=today();var elH=$('#revHighlight');var elW=$('#revWeakness');var elT=$('#revTomorrow');var oldRv=S.reviews.find(function(r){return r.date===td2});var rev={date:td2,highlight:(elH&&elH.value)||'',weakness:(elW&&elW.value)||'',tomorrow:(elT&&elT.value)||'',mood:(oldRv&&oldRv.mood)||'😊'};
   var idx=S.reviews.findIndex(function(r){return r.date===td2});if(idx>=0)S.reviews[idx]=rev;else S.reviews.unshift(rev);save();alert('✅ 复盘已保存')};
 window.setMood=function(e,el){var td2=today();var r=S.reviews.find(function(r){return r.date===td2});if(!r){r={date:td2,highlight:'',weakness:'',tomorrow:'',mood:e};S.reviews.unshift(r)}else r.mood=e;save();
