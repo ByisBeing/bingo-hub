@@ -456,7 +456,7 @@ return`
   <div class="rv-cell"><h4>🌟 今日高光</h4><textarea id="revHighlight" placeholder="今天做得好的...">${todayRev.highlight}</textarea></div>
   <div class="rv-cell"><h4>💪 今日不足</h4><textarea id="revWeakness" placeholder="可以改进的...">${todayRev.weakness}</textarea></div>
   <div class="rv-cell"><h4>🎯 明日计划</h4><textarea id="revTomorrow" placeholder="明天要做...">${todayRev.tomorrow}</textarea></div>
-  <div class="rv-cell"><h4>😊 今日心情</h4><div style="display:flex;gap:6px;flex-wrap:wrap;font-size:24px;margin-top:4px">${['😄','😊','😐','😢','😤','🥰','😴','🔥'].map(function(e){return'<span style="cursor:pointer;padding:4px;'+(todayRev.mood===e?'background:var(--pink);border-radius:8px':'')+'" onclick="setMood(\''+e+'\')">'+e+'</span>'}).join('')}</div></div>
+  <div class="rv-cell"><h4>😊 今日心情</h4><div style="display:flex;gap:6px;flex-wrap:wrap;font-size:24px;margin-top:4px">${['😄','😊','😐','😢','😤','🥰','😴','🔥'].map(function(e){return'<span style="cursor:pointer;padding:4px;'+(todayRev.mood===e?'background:var(--pink);border-radius:8px':'')+'" onclick="setMood(\''+e+'\',this)">'+e+'</span>'}).join('')}</div></div>
 </div>
 <button class="btn btn-primary" style="width:100%;margin-top:12px" onclick="saveReview()">💾 保存复盘</button></div>
 <div class="card"><h3>💡 灵感笔记</h3><input id="noteTitle" placeholder="标题" style="margin-bottom:6px"><textarea id="noteContent" placeholder="内容..." style="margin-bottom:6px;min-height:60px" rows="2"></textarea>
@@ -633,8 +633,9 @@ window.logVocab=function(){var el=$('#vocabCount');var cnt=parseInt(el&&el.value
 window.editTask=function(id){var t=S.tasks.find(function(x){return x.id===id});if(!t)return;var nt=prompt('编辑任务：',t.title);if(nt===null||!nt.trim())return;t.title=nt.trim();save();var label=document.getElementById('task-label-'+id);if(label){var icon=label.textContent.charAt(0);label.textContent=icon+' '+nt};var kb=document.querySelector('.kb-card[data-id="'+id+'"] span:first-child');if(kb)kb.textContent=nt};
 window.saveReview=function(){var td2=today();var elH=$('#revHighlight');var elW=$('#revWeakness');var elT=$('#revTomorrow');var oldRv=S.reviews.find(function(r){return r.date===td2});var rev={date:td2,highlight:(elH&&elH.value)||'',weakness:(elW&&elW.value)||'',tomorrow:(elT&&elT.value)||'',mood:(oldRv&&oldRv.mood)||'😊'};
   var idx=S.reviews.findIndex(function(r){return r.date===td2});if(idx>=0)S.reviews[idx]=rev;else S.reviews.unshift(rev);save();alert('✅ 复盘已保存')};
-window.setMood=function(e){var td2=today();var r=S.reviews.find(function(r){return r.date===td2});if(!r){r={date:td2,highlight:'',weakness:'',tomorrow:'',mood:e};S.reviews.unshift(r)}else r.mood=e;save();
-  var emojis=document.querySelectorAll('.rv-cell span[style*="cursor:pointer"]');emojis.forEach(function(el){el.style.background=''});};
+window.setMood=function(e,el){var td2=today();var r=S.reviews.find(function(r){return r.date===td2});if(!r){r={date:td2,highlight:'',weakness:'',tomorrow:'',mood:e};S.reviews.unshift(r)}else r.mood=e;save();
+  var emojis=document.querySelectorAll('.rv-cell span[onclick^="setMood"]');for(var i=0;i<emojis.length;i++){emojis[i].style.background='';emojis[i].style.borderRadius=''}
+  if(el){el.style.background='var(--pink)';el.style.borderRadius='8px'}};
 window.addNote=function(){var elT=$('#noteTitle');var elC=$('#noteContent');var elTp=$('#noteType');var title=elT&&elT.value;var content=elC&&elC.value;var type=(elTp&&elTp.value)||'inspiration';if(!title||!content)return alert('请填写标题和内容');
   var n={id:Date.now(),title:title,content:content,type:type,date:today()};S.notes.unshift(n);save();
   // Find the notes container (after the add form card)
