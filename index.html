@@ -169,7 +169,6 @@ const defaults = () => ({
     {id:1,title:'🐍 Python 面向对象：类与对象',cat:'course',done:false,tomato:0,priority:1},
     {id:2,title:'📐 高数 微分中值定理 §3.1',cat:'course',done:false,tomato:0,priority:1},
     {id:3,title:'📖 四级高频词 50个',cat:'personal',done:false,tomato:0,priority:2},
-    {id:4,title:'💻 计算机二级 Excel函数练习',cat:'course',done:false,tomato:0,priority:2},
     {id:5,title:'🧠 Python 编程练习（猜数字/记账程序）',cat:'course',done:false,tomato:0,priority:3},
     {id:6,title:'📋 了解华师保研政策',cat:'club',done:false,tomato:0,priority:3},
   ],
@@ -182,14 +181,12 @@ const defaults = () => ({
     {id:6,title:'编程练习 (复习input/if)',date:'2026-08-09',time:'09:00',type:'course',loc:'周六'},
     {id:7,title:'英语模拟1套 + 计算机真题',date:'2026-08-09',time:'14:00',type:'exam',loc:'周六'},
     {id:8,title:'开学报到',date:'2026-08-30',time:'08:00',type:'life',loc:'华中师范大学'},
-    {id:11,title:'计算机二级考试',date:'2026-09-20',time:'09:00',type:'exam',loc:'华师机房'},
     {id:12,title:'CET-4 600+',date:'2026-12-12',time:'09:00',type:'exam',loc:'华师教学楼'},
     {id:13,title:'外研社杯·演讲比赛（校赛）',date:'2026-10-11',time:'09:00',type:'exam',loc:'华师'},
     {id:14,title:'外研社杯·综合赛（校赛）',date:'2026-10-11',time:'13:30',type:'exam',loc:'华师'},
     {id:15,title:'外研社杯·笔译赛（校赛）',date:'2026-10-11',time:'16:00',type:'exam',loc:'华师'},
   ],
   countdowns:[
-    {id:1,title:'计算机二级考试',date:'2026-09-20',color:'var(--orange2)'},
     {id:2,title:'CET-4 600+',date:'2026-12-12',color:'var(--blue2)'},
     {id:3,title:'CET-6 580+',date:'2027-06-12',color:'var(--blue2)'},
     {id:4,title:'全国数学建模国赛',date:'2027-09-09',color:'var(--pink2)'},
@@ -213,7 +210,6 @@ const defaults = () => ({
     {n:'Python（黑马程序员）',p:30},
     {n:'高等数学（宋浩）',p:15},
     {n:'CET-4（目标600+）',p:20},
-    {n:'计算机二级 WPS',p:10},
     {n:'线性代数（宋浩）',p:0},
   ],
   quiz:[
@@ -265,6 +261,16 @@ try{
   }
   if(changed)save();
 })();
+// 迁移：移除已放弃的计算机二级相关条目（幂等）
+(function migrateNcre(){
+  if(!S)return;
+  var changed=false;
+  if(Array.isArray(S.events)){var b=S.events.length;S.events=S.events.filter(function(e){return !/计算机二级/.test(e.title||'')});if(S.events.length!==b)changed=true}
+  if(Array.isArray(S.countdowns)){var b=S.countdowns.length;S.countdowns=S.countdowns.filter(function(c){return !/计算机二级/.test(c.title||'')});if(S.countdowns.length!==b)changed=true}
+  if(Array.isArray(S.tasks)){var b=S.tasks.length;S.tasks=S.tasks.filter(function(t){return !/计算机二级/.test(t.title||'')});if(S.tasks.length!==b)changed=true}
+  if(Array.isArray(S.subjects)){var b=S.subjects.length;S.subjects=S.subjects.filter(function(s){return !/计算机二级|WPS二级/.test(s.n||'')});if(S.subjects.length!==b)changed=true}
+  if(changed)save();
+})();
 function save(){
   try{localStorage.setItem(STORAGE,JSON.stringify(S))}catch(e){alert('⚠️ 保存失败，可能是存储空间不足。建议导出数据备份！')}
 }
@@ -295,7 +301,6 @@ const PLAN={
     '大三上就要准备好所有材料 — 夏令营 3 月就开始报名',
   ],
   milestones:[
-    {t:'计算机二级考试',d:'2026-09-20',note:'9月下旬',tag:'证书',color:'var(--orange2)'},
     {t:'CET-4 600+',d:'2026-12-12',note:'12月中旬',tag:'英语',color:'var(--blue2)'},
     {t:'CET-6 首考 550+',d:'2027-06-12',note:'大一下 6月',tag:'英语',color:'var(--blue2)'},
     {t:'CET-6 刷分 580+',d:'2027-12-12',note:'大二上',tag:'英语',color:'var(--blue2)'},
@@ -307,7 +312,7 @@ const PLAN={
     {t:'推免系统确认',d:'2029-09-28',note:'大四 9.28',tag:'保研',color:'var(--green2)'},
   ],
   roadmap:[
-    {s:'大一上',y:'2026.9-2027.1',items:['GPA 开好头（最重要！）','计算机二级 9月','CET-4 12月（600+）','Python 入门','高数上册']},
+    {s:'大一上',y:'2026.9-2027.1',items:['GPA 开好头（最重要！）','高数打牢基础（竞赛铺垫）','CET-4 12月（600+）','Python 入门']},
     {s:'大一下',y:'2027.2-2027.6',items:['GPA 保持 3.7+','CET-6 6月（550+）','数学竞赛校内选拔','大创项目申请','线性代数/概率论']},
     {s:'大二上',y:'2027.9-2028.1',items:['数学竞赛（10月）','数学建模（9月）','CET-6 刷分（580+）','Python 进阶','金融工程专业课']},
     {s:'大二下',y:'2028.2-2028.6',items:['美赛（2月）','大创中期/结题','准备论文','第一份实习','金融工程核心课']},
@@ -328,7 +333,7 @@ function currentPhase(){
   if(y===2026){
     if(m===8&&day>=3&&day<=30){var wk=Math.floor((day-3)/7)+1;return {label:'暑假冲刺 · 第'+wk+'周',desc:'Python + 高数 + 四级单词 + WPS二级'};}
     if(m===8)return {label:'开学倒计时',desc:'准备开学 + 预习'};
-    if(m===9)return {label:'开学 · 计算机二级冲刺',desc:'开学考已过 ✅ · 二级9/20 · 高数 + 四级启动'};
+    if(m===9)return {label:'开学 · 高数打基础',desc:'开学考已过 ✅ · 高数打基础 + 四级启动'};
     if(m===10)return {label:'高数收尾 + 线代启动',desc:'线性代数 + 四级刷题 + 经济学人'};
     if(m===11)return {label:'线代 + 概率论 + 四级冲刺',desc:'概率论 + 四级真题 + Pandas进阶'};
     if(m===12)return {label:'四级考试 + 期末复习',desc:'12月四级 + 期末（GPA最重要）'};
@@ -506,14 +511,14 @@ var pomoTimer=null,pomoSec=0,pomoRunning=false,pomoTotal=0;
 
 function studyPage(){
 // Subjects from state (editable)
-if(!S.subjects||!S.subjects.length)S.subjects=[{n:'Python',p:30},{n:'高等数学',p:15},{n:'CET-4',p:20},{n:'WPS二级',p:10}];
+if(!S.subjects||!S.subjects.length)S.subjects=[{n:'Python',p:30},{n:'高等数学',p:15},{n:'CET-4',p:20}];
 var subColors=['var(--blue2)','var(--pink2)','var(--orange2)','var(--green2)'];
 var subsHTML=S.subjects.map(function(s,i){
   return '<div style="margin-bottom:8px"><div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;gap:8px"><span style="flex:1">'+s.n+'</span><button class="btn btn-ghost btn-sm" style="min-width:28px;min-height:28px;padding:0;font-size:14px" onclick="adjProgress('+i+',-5)">−</button><span style="font-weight:700;min-width:32px;text-align:center" id="prog-txt-'+i+'">'+s.p+'%</span><button class="btn btn-ghost btn-sm" style="min-width:28px;min-height:28px;padding:0;font-size:14px" onclick="adjProgress('+i+',5)">+</button></div><div class="progress-bar"><div class="progress-fill" id="prog-'+i+'" style="width:'+s.p+'%;background:'+(subColors[i%4])+'"></div></div></div>'
 }).join('');
 subsHTML+='<div style="display:flex;gap:6px;margin-top:8px"><input id="newSubj" placeholder="新科目名" style="font-size:12px;flex:1"><button class="btn btn-ghost btn-sm" onclick="addSubject()">+ 添加科目</button></div>';
 
-var exams=[{n:'计算机二级',d:'2026-09-20',c:'var(--orange2)'},{n:'CET-4',d:'2026-12-12',c:'var(--blue2)'},{n:'期末',d:'2027-01-10',c:'var(--pink2)'}];
+var exams=[{n:'CET-4',d:'2026-12-12',c:'var(--blue2)'},{n:'期末',d:'2027-01-10',c:'var(--pink2)'}];
 var td=today();
 var qlist=S.quiz;if(quizMode==='wrong')qlist=S.quiz.filter(function(q){return q.user!==null&&q.user!==q.ans});
 var qHTML=qlist.map(function(q,i){return'<div class="quiz-card"><div style="font-size:12px;color:var(--text2)">'+q.subj+' · 第'+(i+1)+'题</div><div style="font-weight:600;margin:6px 0">'+q.q+'</div>'+q.opts.map(function(o,j){return'<div class="quiz-opt'+(q.user!==null?(j===q.ans?' correct':j===q.user&&j!==q.ans?' wrong':''):'')+'" onclick="answerQuiz('+q.id+','+j+')">'+('ABCD'[j])+'. '+o+'</div>'}).join('')+(q.user!==null?(q.user===q.ans?'<div style="color:#4a9a6a;font-weight:600;margin-top:4px">✅ 正确！</div>':'<div style="color:#c06050;font-weight:600;margin-top:4px">❌ 正确答案是 '+String.fromCharCode(65+q.ans)+'</div>'):'')+'</div>'}).join('');
@@ -547,9 +552,22 @@ return`
     <div style="padding:7px 8px;background:var(--blue);border-radius:8px;margin-bottom:4px">🐍 8:30-11:30 Python（精力最好时写代码）</div>
     <div style="padding:7px 8px;background:var(--green);border-radius:8px;margin-bottom:4px">📖 午饭后 30min 四级单词</div>
     <div style="padding:7px 8px;background:var(--pink);border-radius:8px;margin-bottom:4px">📐 14:00-16:00 高等数学</div>
-    <div style="padding:7px 8px;background:var(--orange);border-radius:8px">💻 20:00-21:00 计算机二级 WPS</div>
+    <div style="padding:7px 8px;background:var(--orange);border-radius:8px">📐 20:00-21:00 高数刷题（当天内容吃透）</div>
   </div>
   <div style="margin-top:6px;font-size:11px;color:var(--text2)">📌 数学顺序：高数 → 线代 → 概率，不能跳</div>
+</div>
+<div class="card"><h3>📐 高数学习节奏（大一上）</h3>
+  <div style="font-size:11px;color:var(--text2);margin-bottom:8px">跟课堂走 · 当天刷题 · 一章吃透再进下一章</div>
+  <div style="font-size:12px;line-height:1.7">
+    <div style="display:flex;gap:6px;padding:3px 0"><span style="flex:0 0 58px;color:var(--text2)">第1-2周</span><span style="flex:1">函数与极限 · 两个重要极限/洛必达</span></div>
+    <div style="display:flex;gap:6px;padding:3px 0"><span style="flex:0 0 58px;color:var(--text2)">第3-4周</span><span style="flex:1">导数与微分 · 求导练到条件反射</span></div>
+    <div style="display:flex;gap:6px;padding:3px 0"><span style="flex:0 0 58px;color:var(--text2)">第5-6周</span><span style="flex:1">中值定理与导数应用 · 证明题套路</span></div>
+    <div style="display:flex;gap:6px;padding:3px 0"><span style="flex:0 0 58px;color:var(--text2)">第7-8周</span><span style="flex:1">不定积分 · 换元/分部</span></div>
+    <div style="display:flex;gap:6px;padding:3px 0"><span style="flex:0 0 58px;color:var(--text2)">第9-11周</span><span style="flex:1">定积分 · 微积分基本定理</span></div>
+    <div style="display:flex;gap:6px;padding:3px 0"><span style="flex:0 0 58px;color:var(--text2)">第12-13周</span><span style="flex:1">定积分应用 + 微分方程</span></div>
+    <div style="display:flex;gap:6px;padding:3px 0"><span style="flex:0 0 58px;color:var(--text2)">第14-16周</span><span style="flex:1">总复习 + 期末冲刺</span></div>
+  </div>
+  <div style="font-size:11px;color:var(--text2);margin-top:8px">每天 1-1.5h 高数 · 周六重做错题 · 月末限时自测</div>
 </div>
 <div class="card"><h3>⏰ 考试倒计时</h3>${exams.map(function(e){var d=daysBetween(td,e.d);return'<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0"><span>'+e.n+'</span><span style="font-weight:700;font-size:18px;color:'+e.c+'">'+d+'天</span></div>'}).join('')}</div>
 <div class="card"><h3>📝 刷题</h3><div style="display:flex;gap:6px;margin-bottom:8px"><select id="quizFilter" onchange="quizMode=this.value;render();attachEvents()" style="width:auto"><option value="all">全部</option><option value="wrong">错题集</option></select><button class="btn btn-ghost btn-sm" onclick="addQuiz()">+ 添加题目</button></div><div id="quizArea">${qHTML}</div></div>
