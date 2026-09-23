@@ -125,7 +125,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--pink2);box-shadow:0 0
 .cal-cell:active{background:rgba(0,0,0,0.05)}.cal-cell.today{background:var(--pink2);color:#fff;font-weight:700}
 .cal-cell.selected{box-shadow:inset 0 0 0 2px var(--pink2)}.cal-cell.other{color:var(--gray2)}
 .cal-dot{width:5px;height:5px;border-radius:50%;background:var(--pink2);position:absolute;bottom:3px}
-.timetable{display:grid;grid-template-columns:36px repeat(5,1fr);gap:2px;font-size:11px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.timetable{display:grid;grid-template-columns:36px repeat(5,1fr);grid-auto-rows:36px;gap:2px;font-size:11px;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .tt-hd{text-align:center;padding:6px 2px;font-weight:600;color:var(--text2)}
 .tt-period{text-align:center;padding:8px 2px;color:var(--text2);font-size:10px}
 .tt-cell{background:rgba(255,255,255,0.5);border-radius:6px;padding:4px;min-height:36px;cursor:pointer;transition:.15s;font-size:10px;overflow:hidden}
@@ -193,13 +193,19 @@ const defaults = () => ({
     {id:5,title:'外研社杯校赛',date:'2026-10-11',color:'var(--pink2)'},
   ],
   courses:[
-    {id:1,name:'英语听力',day:1,start:1,dur:2,loc:'宿舍',teacher:'真题',weeks:'暑假'},
-    {id:2,name:'Python',day:1,start:3,dur:2,loc:'线上',teacher:'黑马',weeks:'暑假'},
-    {id:3,name:'计算机WPS',day:2,start:1,dur:2,loc:'B站',teacher:'大猫',weeks:'暑假'},
-    {id:4,name:'英语阅读',day:3,start:1,dur:2,loc:'宿舍',teacher:'真题',weeks:'暑假'},
-    {id:5,name:'Python',day:4,start:1,dur:2,loc:'线上',teacher:'黑马',weeks:'暑假'},
-    {id:6,name:'计算机WPS',day:5,start:1,dur:2,loc:'B站',teacher:'大猫',weeks:'暑假'},
-    {id:7,name:'英语全套模拟',day:6,start:1,dur:3,loc:'宿舍',teacher:'真题',weeks:'暑假'},
+    {id:101,name:'学术英语听说',day:1,start:1,dur:2,loc:'南湖综合楼2(NY500)',teacher:'韩玉乾（讲师）',weeks:'4-19周'},
+    {id:102,name:'微观经济学',day:1,start:3,dur:2,loc:'南湖综合楼2(n306)',teacher:'陈淑云（教授）',weeks:'4-19周'},
+    {id:103,name:'高等数学B1',day:1,start:5,dur:2,loc:'南湖综合楼2(n215)',teacher:'鲁敏（副研究员）',weeks:'4-19周'},
+    {id:104,name:'人工智能导引',day:2,start:1,dur:2,loc:'9号教学楼(9316)',teacher:'张清国（副教授）',weeks:'4-19周'},
+    {id:105,name:'大学生心理健康教育',day:2,start:3,dur:2,loc:'南湖综合楼2(n319)/虚拟教室1',teacher:'喻邱晨（讲师）',weeks:'4-19周'},
+    {id:106,name:'大学体育1',day:2,start:5,dur:2,loc:'南湖体育场(南湖体操馆)',teacher:'龙春晓（副教授）',weeks:'4-19周'},
+    {id:107,name:'习近平新时代中国特色社会主义思想概论',day:3,start:3,dur:2,loc:'南湖综合楼2(n201)',teacher:'李梦兰（讲师）',weeks:'5-19周(单周)'},
+    {id:108,name:'高等数学B1',day:4,start:1,dur:2,loc:'南湖综合楼2(n215)',teacher:'鲁敏（副研究员）',weeks:'4-19周'},
+    {id:109,name:'学术英语读写',day:4,start:5,dur:2,loc:'南湖综合楼2(n117)',teacher:'刘畅（讲师）',weeks:'4-19周'},
+    {id:110,name:'微观经济学',day:5,start:1,dur:2,loc:'南湖综合楼2(n306)',teacher:'陈淑云（教授）',weeks:'12-19周'},
+    {id:111,name:'经济与管理学科导论',day:5,start:3,dur:2,loc:'南湖综合楼2(n223)',teacher:'多位教授轮讲',weeks:'4-19周'},
+    {id:112,name:'习近平新时代中国特色社会主义思想概论',day:5,start:5,dur:2,loc:'南湖综合楼2(n201)',teacher:'李梦兰（讲师）',weeks:'4-19周'},
+    {id:113,name:'国家安全教育',day:5,start:9,dur:2,loc:'虚拟教室1',teacher:'汪滨（副教授）',weeks:'5-12周'},
   ],
   finances:[
     {id:1,type:'expense',amount:35,cat:'餐饮',note:'午饭外卖',date:'2026-08-04'},
@@ -269,6 +275,33 @@ try{
   if(Array.isArray(S.countdowns)){var b=S.countdowns.length;S.countdowns=S.countdowns.filter(function(c){return !/计算机二级/.test(c.title||'')});if(S.countdowns.length!==b)changed=true}
   if(Array.isArray(S.tasks)){var b=S.tasks.length;S.tasks=S.tasks.filter(function(t){return !/计算机二级/.test(t.title||'')});if(S.tasks.length!==b)changed=true}
   if(Array.isArray(S.subjects)){var b=S.subjects.length;S.subjects=S.subjects.filter(function(s){return !/计算机二级|WPS二级/.test(s.n||'')});if(S.subjects.length!==b)changed=true}
+  if(changed)save();
+})();
+// 迁移：导入2026-2027-1学期正式课表（替换暑假占位课程，幂等）
+(function migrateSchedule(){
+  if(!S||!Array.isArray(S.courses))return;
+  var changed=false;
+  var before=S.courses.length;
+  S.courses=S.courses.filter(function(c){return c.weeks!=='暑假'});
+  if(S.courses.length!==before)changed=true;
+  var real=[
+    {id:101,name:'学术英语听说',day:1,start:1,dur:2,loc:'南湖综合楼2(NY500)',teacher:'韩玉乾（讲师）',weeks:'4-19周'},
+    {id:102,name:'微观经济学',day:1,start:3,dur:2,loc:'南湖综合楼2(n306)',teacher:'陈淑云（教授）',weeks:'4-19周'},
+    {id:103,name:'高等数学B1',day:1,start:5,dur:2,loc:'南湖综合楼2(n215)',teacher:'鲁敏（副研究员）',weeks:'4-19周'},
+    {id:104,name:'人工智能导引',day:2,start:1,dur:2,loc:'9号教学楼(9316)',teacher:'张清国（副教授）',weeks:'4-19周'},
+    {id:105,name:'大学生心理健康教育',day:2,start:3,dur:2,loc:'南湖综合楼2(n319)/虚拟教室1',teacher:'喻邱晨（讲师）',weeks:'4-19周'},
+    {id:106,name:'大学体育1',day:2,start:5,dur:2,loc:'南湖体育场(南湖体操馆)',teacher:'龙春晓（副教授）',weeks:'4-19周'},
+    {id:107,name:'习近平新时代中国特色社会主义思想概论',day:3,start:3,dur:2,loc:'南湖综合楼2(n201)',teacher:'李梦兰（讲师）',weeks:'5-19周(单周)'},
+    {id:108,name:'高等数学B1',day:4,start:1,dur:2,loc:'南湖综合楼2(n215)',teacher:'鲁敏（副研究员）',weeks:'4-19周'},
+    {id:109,name:'学术英语读写',day:4,start:5,dur:2,loc:'南湖综合楼2(n117)',teacher:'刘畅（讲师）',weeks:'4-19周'},
+    {id:110,name:'微观经济学',day:5,start:1,dur:2,loc:'南湖综合楼2(n306)',teacher:'陈淑云（教授）',weeks:'12-19周'},
+    {id:111,name:'经济与管理学科导论',day:5,start:3,dur:2,loc:'南湖综合楼2(n223)',teacher:'多位教授轮讲',weeks:'4-19周'},
+    {id:112,name:'习近平新时代中国特色社会主义思想概论',day:5,start:5,dur:2,loc:'南湖综合楼2(n201)',teacher:'李梦兰（讲师）',weeks:'4-19周'},
+    {id:113,name:'国家安全教育',day:5,start:9,dur:2,loc:'虚拟教室1',teacher:'汪滨（副教授）',weeks:'5-12周'},
+  ];
+  real.forEach(function(c){
+    if(!S.courses.some(function(x){return x.name===c.name&&x.day===c.day&&x.start===c.start})){S.courses.push(c);changed=true}
+  });
   if(changed)save();
 })();
 function save(){
@@ -436,17 +469,23 @@ const ddl=S.events.filter(e=>{const diff=daysBetween(td,e.date);return diff>=0&&
 calHTML+=ddl.length?`<div class="card" style="margin-top:12px;background:linear-gradient(135deg,#fce4ec,#fde4cc)"><h3>🚨 7天DDL预警</h3>${ddl.map(e=>`<div style="font-size:13px;padding:4px 0">⏰ ${e.date} — ${e.title}</div>`).join('')}</div>`:'';
 
 // Timetable
-const weekDays=['一','二','三','四','五','六','日'];const periods=10;
-let ttHTML='<div class="card" style="margin-top:12px"><h3>📅 周课表 <span style="font-size:12px;color:var(--text2)">暑假第1周</span></h3>';
-ttHTML+='<div class="timetable"><div></div>'+weekDays.slice(0,5).map(d=>'<div class="tt-hd">周'+d+'</div>').join('');
+const weekDays=['一','二','三','四','五','六','日'];
+const periods=10;
+// 标记被课程占用的格子，正确处理跨节（dur>1）课程，避免网格错位
+const occ={};
+S.courses.forEach(c=>{for(let k=0;k<(c.dur||1);k++)occ[c.day+'-'+(c.start+k)]=c;});
+let ttHTML='<div class="card" style="margin-top:12px"><h3>📅 周课表 <span style="font-size:12px;color:var(--text2)">2026-2027-1 · 第4-19周</span></h3>';
+ttHTML+='<div class="timetable"><div style="grid-column:1;grid-row:1"></div>';
+for(let d=1;d<=5;d++){ttHTML+='<div class="tt-hd" style="grid-column:'+(d+1)+';grid-row:1">周'+weekDays[d-1]+'</div>';}
 for(let p=1;p<=periods;p++){
-  ttHTML+='<div class="tt-period">'+p+'</div>';
+  ttHTML+='<div class="tt-period" style="grid-column:1;grid-row:'+(p+1)+'">'+p+'</div>';
   for(let d=1;d<=5;d++){
-    const cs=S.courses.filter(c=>c.day===d&&c.start===p);
-    if(cs.length){
-      const c=cs[0];const h=Math.min(c.dur*28,84);
-      ttHTML+=`<div class="tt-cell has-course" style="grid-row:span ${c.dur};height:${h}px" onclick="courseDetail(${c.id})">${c.name}<br><span style="font-size:9px;opacity:.7">${c.loc}</span></div>`;
-    }else{ttHTML+='<div class="tt-cell"></div>'}
+    const c=occ[d+'-'+p];
+    if(c&&c.start===p){
+      ttHTML+='<div class="tt-cell has-course" style="grid-column:'+(d+1)+';grid-row:'+(p+1)+' / span '+c.dur+'" onclick="courseDetail('+c.id+')">'+c.name+'<br><span style="font-size:9px;opacity:.7">'+c.loc+'</span></div>';
+    }else if(!c){
+      ttHTML+='<div class="tt-cell" style="grid-column:'+(d+1)+';grid-row:'+(p+1)+'"></div>';
+    }
   }
 }
 ttHTML+='</div>';
@@ -675,7 +714,7 @@ window.addCourse=function(){
   var loc=(document.getElementById('cLoc')&&document.getElementById('cLoc').value)||'';
   var teacher=(document.getElementById('cTeacher')&&document.getElementById('cTeacher').value)||'';
   if(!start||start<1||start>10)return alert('请输入有效开始节次(1-10)');
-  S.courses.push({id:Date.now(),name:name,day:day,start:start,dur:dur,loc:loc,teacher:teacher,weeks:'1-18'});
+  S.courses.push({id:Date.now(),name:name,day:day,start:start,dur:dur,loc:loc,teacher:teacher,weeks:'1-18周'});
   save();render();attachEvents();alert('✅ 课程已添加！');
 };
 window.delCourse=function(id){if(!confirm('删除这门课？'))return;S.courses=S.courses.filter(function(c){return c.id!==id});save();render();attachEvents();document.getElementById('page-cal').classList.add('active')};
@@ -728,7 +767,7 @@ window.delEvent=function(id){if(!confirm('删除这个事件？'))return;S.event
 window.editEvent=function(id){var e=S.events.find(function(x){return x.id===id});if(!e)return;
   var t=prompt('事件名称：',e.title);if(t===null)return;var tm=prompt('时间：',e.time);if(tm===null)return;var l=prompt('地点：',e.loc);if(l===null)return;
   e.title=t;e.time=tm;e.loc=l;save();selectDate(e.date)};
-window.courseDetail=function(id){var c=S.courses.find(function(x){return x.id===id});if(c)showModal('<h3>'+c.name+'</h3><p>📍 '+c.loc+'</p><p>👨‍🏫 '+c.teacher+'</p><p>📅 第'+c.weeks+'周</p><p>⏰ 周'+c.day+' 第'+c.start+'-'+(c.start+c.dur-1)+'节</p><button class="btn btn-ghost btn-sm" style="color:#c06050;width:100%;margin-top:8px" onclick="delCourse('+c.id+');document.getElementById(\'modalContainer\').innerHTML=\'\'">🗑 删除此课程</button>')};
+window.courseDetail=function(id){var c=S.courses.find(function(x){return x.id===id});if(c)showModal('<h3>'+c.name+'</h3><p>📍 '+c.loc+'</p><p>👨‍🏫 '+c.teacher+'</p><p>📅 教学周：'+c.weeks+'</p><p>⏰ 周'+c.day+' 第'+c.start+'-'+(c.start+c.dur-1)+'节</p><button class="btn btn-ghost btn-sm" style="color:#c06050;width:100%;margin-top:8px" onclick="delCourse('+c.id+');document.getElementById(\'modalContainer\').innerHTML=\'\'">🗑 删除此课程</button>')};
 
 // Task kanban
 window.addTask=function(cat){var t=prompt('任务名称：');if(!t)return;var pri=parseInt(prompt('优先级 (1=🔴紧急 2=🟡重要 3=🟢一般)：','1'))||1;var task={id:Date.now(),title:t,cat:cat,done:false,tomato:0,priority:pri};S.tasks.push(task);save();
